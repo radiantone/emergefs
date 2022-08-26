@@ -52,5 +52,3 @@ def start():
     node = NodeServer()
     node.setup()
     node.start()
-    node.stop()
-    node.shutdown()

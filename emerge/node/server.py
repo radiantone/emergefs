@@ -1,24 +1,35 @@
 import logging
+import signal
+from typing import List
 
 from emerge.core.objects import Server
+from emerge.fs.filesystem import FileSystemFactory
 
 
 class NodeServer(Server):
+    """Node server"""
+
     topic = "NODE"
     socket = None
     port = "5557"
 
+    services: List = []
+
     def shutdown(self) -> bool:
         logging.debug("[NodeServer] shutdown...")
+        [service.shutdown() for service in self.services]
         return True
 
     def stop(self) -> bool:
         logging.debug("[NodeServer] stop...")
-        self.thread.join()
+        self.process.terminate()
+
+        [service.stop() for service in self.services]
+
         return True
 
     def setup(self, options: dict = {}) -> bool:
-        import threading
+        import multiprocessing
 
         import zmq
 
@@ -42,9 +53,22 @@ class NodeServer(Server):
                 logging.debug("Waiting on message")
                 string = self.socket.recv_string()
                 logging.debug("Got message %s", string)
+            logging.debug("Quitting get_messages")
 
-        self.thread = threading.Thread(target=get_messages)
-        self.thread.start()
+        self.process = multiprocessing.Process(target=get_messages)
+        self.process.start()
+
+        fs = FileSystemFactory.get()
+        self.services += [fs]
+
+        [service.setup() for service in self.services]
+
+        def handler(signum, frame):
+            self.stop()
+            self.shutdown()
+
+        signal.signal(signal.SIGINT, handler)  # type: ignore
+
         return True
 
     def start(self) -> bool:
@@ -62,4 +86,7 @@ class NodeServer(Server):
 
         # Receives a string format message
         socket.send_string("NODE hi")
+
+        [service.start() for service in self.services]
+
         return True

@@ -3,28 +3,29 @@ from abc import ABCMeta, abstractmethod
 
 
 class Handler(metaclass=ABCMeta):
-    """ Base Handler class """
+    """Base Handler class"""
+
     @abstractmethod
     def handle(self, message: dict) -> bool:
         pass
 
 
 class BlockHandler(Handler):
-    """ Handle requests for blocks """
+    """Handle requests for blocks"""
 
     def handle(self, message: dict) -> bool:
         pass
 
 
 class FileHandler(Handler):
-    """ Handle requests for files """
+    """Handle requests for files"""
 
     def handle(self, message: dict) -> bool:
         pass
 
 
 class StreamHandler(Handler):
-    """ Stream files to a client """
+    """Stream files to a client"""
 
     def handle(self, message: dict) -> bool:
         pass
