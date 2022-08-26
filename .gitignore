@@ -1,0 +1,15 @@
+build
+git
+docs/_build
+dist
+*egg-info
+/**/*.pyc
+/**/__pycache__
+**/.~lock*
+./git
+.vscode
+.idea
+venv*
+migration
+./git/*
+scratch

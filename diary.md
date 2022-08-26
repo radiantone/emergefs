@@ -1,0 +1,11 @@
+- Server click cli
+  - Start the server, listen on emerge pub/sub channel
+  - Observe join and departure events in the local cluster
+- Create a File object, store data in it, or using a reader object
+  - emerge will read that file into Block objects and yield those
+  - each block is sent to n number of nodes depending on the raid level of the File
+- Requesting a file
+  - When a node requests a file, it sends out a pub sub for other nodes to notify it of the blocks they have
+  - the requesting node then orders the block id's to reassemble the file map and requests the blocks from the host nodes
+  - if a block transfer fails midstream, the requesting node falls back to the next node who owns that block id
+  - 
