@@ -35,19 +35,17 @@ class NodeServer(Server):
 
         logging.debug("[NodeServer] Setup...")
 
-        # Socket to talk to server
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.SUB)
-
-        host = "127.0.0.1"
-        port = "5557"
-
-        self.socket.connect("tcp://{}:{}".format(host, port))
-
-        self.socket.subscribe("NODE")
-        logging.debug("Subscribed to NODE")
-
         def get_messages():
+            self.context = zmq.Context()
+            self.socket = self.context.socket(zmq.SUB)
+            host = "127.0.0.1"
+            port = "5557"
+
+            self.socket.connect("tcp://{}:{}".format(host, port))
+
+            self.socket.subscribe("NODE")
+            logging.debug("Subscribed to NODE")
+
             while True:
                 logging.debug("get_messages")
                 logging.debug("Waiting on message")
@@ -58,7 +56,7 @@ class NodeServer(Server):
         self.process = multiprocessing.Process(target=get_messages)
         self.process.start()
 
-        fs = FileSystemFactory.get()
+        fs = self.fs = FileSystemFactory.get()
         self.services += [fs]
 
         [service.setup() for service in self.services]
@@ -76,6 +74,8 @@ class NodeServer(Server):
 
         import zmq
 
+        from emerge.compute import Data
+
         logging.debug("[NodeServer] start...")
 
         context = zmq.Context()
@@ -88,5 +88,22 @@ class NodeServer(Server):
         socket.send_string("NODE hi")
 
         [service.start() for service in self.services]
+
+        objects = self.fs.objects
+
+        logging.info("objects length: %s %s", objects, len(objects))
+        for object_ in objects:
+            object__: Data = objects[object_]
+            logging.info("object: %s", object__)
+            logging.info("size: %s", object__.get_size())
+
+        if len(objects) == 0:
+            with self.fs.session():
+                data = Data("file1:id")
+                data.data = "this is the data"
+                objects["file1"] = data
+                logging.info("Added object %s", objects["file1"])
+
+                logging.info("objects length: %s", len(objects))
 
         return True

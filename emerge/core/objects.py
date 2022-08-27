@@ -25,32 +25,37 @@ class Server(metaclass=ABCMeta):
 class Object(persistent.Persistent, metaclass=ABCMeta):
     """Any object in emerge"""
 
+    def __init__(self, oid):
+        self.oid = oid
+
     @property
-    @abstractmethod
     def id(self):
-        pass
+        return self.oid
 
 
 class Block(Object):
     """Holds references to block"""
 
-    @property
-    def id(self):
-        pass
+    pass
 
 
 class File(Object):
     """Holds references to file"""
 
-    @property
-    def id(self):
-        pass
+    pass
 
 
 class FileSystem(Server, Object):
     """A persistent filesystem"""
 
-    @property
-    @abstractmethod
-    def id(self):
+    def start(self) -> bool:
+        pass
+
+    def stop(self) -> bool:
+        pass
+
+    def shutdown(self) -> bool:
+        pass
+
+    def setup(self, options: dict) -> bool:
         pass
