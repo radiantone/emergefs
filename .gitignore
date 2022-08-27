@@ -1,4 +1,6 @@
 build
+emerge.f*
+tmp
 git
 docs/_build
 dist

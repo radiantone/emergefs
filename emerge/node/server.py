@@ -2,6 +2,9 @@ import logging
 import signal
 from typing import List
 
+import dill
+
+from emerge.compute import Data
 from emerge.core.objects import Server
 from emerge.fs.filesystem import FileSystemFactory
 
@@ -11,9 +14,40 @@ class NodeServer(Server):
 
     topic = "NODE"
     socket = None
-    port = "5557"
-
     services: List = []
+
+    class NodeAPI:
+        """Expose RPC API for interacting with this node server.
+        Often other nodes will need to make requests for objects from this
+        server."""
+
+        name = "NodeAPI"
+
+        def __init__(self, fs):
+            self.fs = fs
+
+        def hello(self, address):
+            logging.info("HELLO FROM {}".format(address))
+
+        def get(self, oid):
+            return self.fs.objects[oid]
+
+        def execute(self, oid):
+            _obj = dill.loads(self.fs.objects[oid])
+            return self.name + ":" + _obj.run()
+
+        def store(self, obj):
+            import dill
+
+            _obj = dill.loads(obj)
+            with self.fs.session():
+                self.fs.objects[_obj.id] = obj
+                logging.info("STORE OBJECT %s %s", _obj, _obj.data())
+
+        def get_data(self, oid):
+            obj: Data = self.fs.objects[oid]
+
+            return obj.data
 
     def shutdown(self) -> bool:
         logging.debug("[NodeServer] shutdown...")
@@ -23,6 +57,7 @@ class NodeServer(Server):
     def stop(self) -> bool:
         logging.debug("[NodeServer] stop...")
         self.process.terminate()
+        self.rpc.terminate()
 
         [service.stop() for service in self.services]
 
@@ -30,36 +65,66 @@ class NodeServer(Server):
 
     def setup(self, options: dict = {}) -> bool:
         import multiprocessing
+        import socket
+        from contextlib import closing
 
+        import zerorpc
         import zmq
 
         logging.debug("[NodeServer] Setup...")
 
+        def find_free_port():
+            with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+                s.bind(("", 0))
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                return s.getsockname()[1]
+
+        self.rpcport = find_free_port()
+        self.port = "5557"  # find_free_port()
+        self.bindport = find_free_port()
+        self.rpcport = "5558"  # find_free_port()
+
+        def start_rpc():
+            """Listen for RPC events"""
+            s = zerorpc.Server(self.NodeAPI(self.fs))
+            s.bind("tcp://0.0.0.0:{}".format(self.rpcport))
+            s.run()
+
         def get_messages():
+            """Listen for pub/sub messages"""
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.SUB)
             host = "127.0.0.1"
-            port = "5557"
 
-            self.socket.connect("tcp://{}:{}".format(host, port))
+            """ Connect to pub/sub address """
+            self.socket.bind("tcp://{}:{}".format(host, self.port))
 
             self.socket.subscribe("NODE")
-            logging.debug("Subscribed to NODE")
+            logging.debug(
+                "Subscribed to NODE on %s", "tcp://{}:{}".format(host, self.port)
+            )
 
             while True:
                 logging.debug("get_messages")
                 logging.debug("Waiting on message")
                 string = self.socket.recv_string()
                 logging.debug("Got message %s", string)
-            logging.debug("Quitting get_messages")
+                parts = string.split(" ")
+                if parts[1] == "HI":
+                    client = zerorpc.Client()
+                    client.connect(parts[2])
+                    client.hello("tcp://0.0.0.0:{}".format(self.rpcport))
 
         self.process = multiprocessing.Process(target=get_messages)
-        self.process.start()
+        self.rpc = multiprocessing.Process(target=start_rpc)
 
+        """ Add filesystem service """
         fs = self.fs = FileSystemFactory.get()
         self.services += [fs]
 
         [service.setup() for service in self.services]
+
+        """ Handle keyboard quit """
 
         def handler(signum, frame):
             self.stop()
@@ -74,18 +139,20 @@ class NodeServer(Server):
 
         import zmq
 
-        from emerge.compute import Data
-
         logging.debug("[NodeServer] start...")
 
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
-        socket.bind("tcp://127.0.0.1:%s" % "5557")
+        socket.connect("tcp://127.0.0.1:%s" % str(self.port))
+
+        # Receives a string format message
+
+        self.process.start()
+        self.rpc.start()
 
         time.sleep(1)
 
-        # Receives a string format message
-        socket.send_string("NODE hi")
+        socket.send_string("NODE HI {}".format("tcp://0.0.0.0:{}".format(self.rpcport)))
 
         [service.start() for service in self.services]
 
@@ -94,8 +161,11 @@ class NodeServer(Server):
         logging.info("objects length: %s %s", objects, len(objects))
         for object_ in objects:
             object__: Data = objects[object_]
-            logging.info("object: %s", object__)
-            logging.info("size: %s", object__.get_size())
+
+            if type(object__) is bytes:
+                object__ = dill.loads(object__)
+
+            logging.info("object: %s %s", object__.id, object__)
 
         if len(objects) == 0:
             with self.fs.session():

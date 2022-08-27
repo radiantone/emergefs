@@ -37,3 +37,4 @@ redis~=4.3.4
 persistent~=4.9.0
 setuptools~=63.2.0
 BTrees~=4.10.0
+zerorpc~=0.6.3

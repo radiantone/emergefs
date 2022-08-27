@@ -22,7 +22,7 @@ class Server(metaclass=ABCMeta):
         pass
 
 
-class Object(persistent.Persistent, metaclass=ABCMeta):
+class Object(persistent.Persistent):
     """Any object in emerge"""
 
     def __init__(self, oid):
