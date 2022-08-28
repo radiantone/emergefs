@@ -32,12 +32,33 @@ class NodeServer(Server):
         def get(self, path, page=0, size=-1):
             import BTrees.OOBTree
 
+            print("PATH", path)
             obj = self.fs.objects[path]
 
             if isinstance(obj, BTrees.OOBTree.OOBTree):
-                return dill.dumps([dill.loads(obj[o]) for o in obj])
+                # return dill.dumps([dill.loads(obj[o]) for o in obj])
+                return [dill.dumps(obj[o]) for o in obj]
             else:
+                # _obj = dill.loads(obj)
                 return obj
+
+        def list(self, path, offset=0, size=0):
+            import BTrees.OOBTree
+
+            print("PATH", path)
+            if path != "/":
+                obj = self.fs.objects[path]
+            else:
+                obj = self.fs.objects
+
+            if isinstance(obj, BTrees.OOBTree.OOBTree):
+                print("BTREE", path, obj)
+                files = [obj[o]["path"] + "/" + obj[o]["name"] for o in obj]
+                print(path, files)
+                return dill.dumps(files)
+            else:
+                print(obj.path + "/" + obj.name, "NOT BTREE!")
+                return obj.path + "/" + obj.name
 
         def execute(self, oid, method):
             _obj = dill.loads(self.fs.objects[oid])
@@ -45,19 +66,40 @@ class NodeServer(Server):
             return _method()
 
         def store(self, id, path, name, obj):
+            import datetime
+
             import BTrees.OOBTree
             import dill
 
             _obj = dill.loads(obj)
+
+            file = {
+                "date": str(datetime.datetime.now()),
+                "path": _obj.path,
+                "name": _obj.name,
+                "id": _obj.id,
+                "size": len(obj),
+                "obj": obj,
+            }
+
             with self.fs.session():
                 if path in self.fs.objects:
                     directory = self.fs.objects[path]
+                    print("GETTING BTREE FOR", path)
+                    print([name for name in directory])
                 else:
+                    print("CREATING NEW BTREE FOR", path)
                     directory = BTrees.OOBTree.BTree()
                     self.fs.objects[path] = directory
 
-                directory[id] = obj
-                self.fs.objects[path + "/" + name] = obj
+                directory[id] = file
+
+                if path[-1] != "/":
+                    self.fs.objects[path + "/" + name] = file
+                    print("ADDED", path + "/" + name)
+                else:
+                    self.fs.objects[path + name] = file
+                    print("ADDED", path + name)
 
                 logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
 
@@ -67,21 +109,25 @@ class NodeServer(Server):
             return obj.data
 
     def shutdown(self) -> bool:
+        import os
+
         logging.debug("[NodeServer] shutdown...")
         [service.shutdown() for service in self.services]
+        logging.debug("[NodeServer] shutdown finished...")
+        os.killpg(os.getpgid(os.getpid()), 15)
+        os.kill(os.getpid(), signal.SIGKILL)
         return True
 
     def stop(self) -> bool:
         logging.debug("[NodeServer] stop...")
-        self.process.terminate()
-        self.rpc.terminate()
+        # self.process.terminate()
+        # self.rpc.terminate()
 
         [service.stop() for service in self.services]
 
         return True
 
     def setup(self, options: dict = {}) -> bool:
-        import multiprocessing
         import socket
         from contextlib import closing
 
@@ -120,7 +166,6 @@ class NodeServer(Server):
             logging.debug(
                 "Subscribed to NODE on %s", "tcp://{}:{}".format(host, self.port)
             )
-
             while True:
                 logging.debug("get_messages")
                 logging.debug("Waiting on message")
@@ -132,12 +177,13 @@ class NodeServer(Server):
                     client.connect(parts[2])
                     client.hello("tcp://0.0.0.0:{}".format(self.rpcport))
 
-        self.process = multiprocessing.Process(target=get_messages)
-        self.rpc = multiprocessing.Process(target=start_rpc)
-
-        """ Add filesystem service """
         fs = self.fs = FileSystemFactory.get()
         self.services += [fs]
+        import threading
+
+        self.process = threading.Thread(target=get_messages)
+        self.rpc = threading.Thread(target=start_rpc)
+        """ Add filesystem service """
 
         [service.setup() for service in self.services]
 
@@ -192,27 +238,20 @@ class NodeServer(Server):
                 )
             except:
                 pass
-
         from functools import reduce
 
-        sum_a = reduce(
-            lambda x, y: x + y,
-            [
-                obj.unit_price
-                for obj in (dill.loads(objects[name]) for name in objects)
-                if hasattr(obj, "unit_price")
-            ],
-        )
+        try:
+            sum_a = reduce(
+                lambda x, y: x + y,
+                [
+                    obj.unit_price
+                    for obj in (dill.loads(objects[name]) for name in objects)
+                    if hasattr(obj, "unit_price")
+                ],
+            )
 
-        print("SUM:", sum_a)
-
-        if len(objects) == 0:
-            with self.fs.session():
-                data = Data("file1:id")
-                data.data = "this is the data"
-                objects["file1"] = data
-                logging.info("Added object %s", objects["file1"])
-
-                logging.info("objects length: %s", len(objects))
+            print("SUM:", sum_a)
+        except:
+            pass
 
         return True

@@ -33,6 +33,14 @@ def cli(context, debug):
             level=logging.INFO,
         )
 
+    from emerge.core.client import Client
+
+    """ Connect to specific Node """
+    client = Client("0.0.0.0", "5558")
+
+    context.obj = {}
+
+    context.obj["client"] = client
     logging.debug("Debug ON")
     if len(sys.argv) == 1:
         click.echo(context.get_help())
@@ -45,10 +53,35 @@ def node():
 
 
 @node.command(name="start")
-def start():
+@click.pass_context
+def start(context):
     """Start emerge node server"""
     from emerge.node.server import NodeServer
 
     node = NodeServer()
     node.setup()
     node.start()
+
+
+@cli.command()
+@click.argument("directory", default="/")
+@click.pass_context
+def ls(context, directory):
+    """List files in a directory"""
+
+    client = context.obj["client"]
+
+    files = client.list(directory, offset=0, size=0)
+    for file in files:
+        click.echo(file.replace(directory + "/", ""))
+
+
+@cli.command()
+@click.argument("path")
+@click.pass_context
+def cat(context, path):
+    """Display contents of a file"""
+    client = context.obj["client"]
+
+    file = client.get(path)
+    print(file)
