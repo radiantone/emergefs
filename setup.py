@@ -120,7 +120,8 @@ setup(
     author=about['__author__'],
     author_email=about['__author_email__'],
     url=about['__url__'],
-    packages=['emerge', 'emerge.zmq', 'emerge.core', 'emerge.node','emerge.fs','emerge.file','emerge.compute', 'emerge.cli', 'emerge.tests'],
+    packages=['emerge', 'emerge.zmq', 'emerge.data', 'emerge.core', 'emerge.node', 'emerge.fs', 'emerge.file',
+              'emerge.compute', 'emerge.cli', 'emerge.tests'],
     include_package_data=True,
     python_requires=">=3.8.*",
     install_requires=[

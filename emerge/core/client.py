@@ -13,5 +13,5 @@ class Client:
     def get(self, oid):
         return dill.loads(self.client.get(oid))
 
-    def run(self, oid):
-        return self.client.execute(oid)
+    def run(self, oid, method):
+        return self.client.execute(oid, method)

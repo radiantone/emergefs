@@ -32,9 +32,10 @@ class NodeServer(Server):
         def get(self, oid):
             return self.fs.objects[oid]
 
-        def execute(self, oid):
+        def execute(self, oid, method):
             _obj = dill.loads(self.fs.objects[oid])
-            return self.name + ":" + _obj.run()
+            _method = getattr(_obj, method)
+            return _method()
 
         def store(self, obj):
             import dill
@@ -42,7 +43,7 @@ class NodeServer(Server):
             _obj = dill.loads(obj)
             with self.fs.session():
                 self.fs.objects[_obj.id] = obj
-                logging.info("STORE OBJECT %s %s", _obj, _obj.data())
+                logging.info("STORE OBJECT %s", _obj)
 
         def get_data(self, oid):
             obj: Data = self.fs.objects[oid]
