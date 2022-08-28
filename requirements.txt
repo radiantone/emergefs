@@ -30,7 +30,6 @@ tomli==2.0.1
 typing_extensions==4.3.0
 vine==5.0.0
 wcwidth==0.2.5
-
 ZODB~=5.7.0
 emerge~=0.0.1
 redis~=4.3.4
@@ -38,3 +37,4 @@ persistent~=4.9.0
 setuptools~=63.2.0
 BTrees~=4.10.0
 zerorpc~=0.6.3
+dill~=0.3.5.1
