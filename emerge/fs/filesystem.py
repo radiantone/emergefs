@@ -41,6 +41,9 @@ class Z0DBFileSystem(FileSystem):
             logging.info("Creating new objects collection")
             self.root.objects = BTrees.OOBTree.BTree()
 
+            directory = BTrees.OOBTree.BTree()
+            self.root.objects["/"] = directory
+
             transaction.commit()
         self.objects = self.root.objects
 

@@ -2,6 +2,7 @@ import logging
 import signal
 from typing import List
 
+import BTrees.OOBTree
 import dill
 
 from emerge.compute import Data
@@ -30,7 +31,6 @@ class NodeServer(Server):
             logging.info("HELLO FROM {}".format(address))
 
         def get(self, path, page=0, size=-1):
-            import BTrees.OOBTree
 
             print("PATH", path)
             obj = self.fs.objects[path]
@@ -53,11 +53,17 @@ class NodeServer(Server):
 
             if isinstance(obj, BTrees.OOBTree.OOBTree):
                 print("BTREE", path, obj)
-                files = [obj[o]["path"] + "/" + obj[o]["name"] for o in obj]
+                files = []
+                for o in obj:
+                    print("O", obj[o])
+                    if isinstance(obj[o], BTrees.OOBTree.OOBTree):
+                        files += [path]
+                    else:
+                        files += [obj[o]["path"] + "/" + obj[o]["name"]]
+
                 print(path, files)
                 return dill.dumps(files)
             else:
-                print(obj.path + "/" + obj.name, "NOT BTREE!")
                 return obj.path + "/" + obj.name
 
         def execute(self, oid, method):

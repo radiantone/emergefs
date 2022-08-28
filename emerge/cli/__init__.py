@@ -82,10 +82,13 @@ def ls(context, directory):
     files = client.list(directory, offset=0, size=0)
     for fname in files:
         file = client.get(fname)
-        row = "{: <8} {: >10} {: <10}".format(
-            human_readable_size(file["size"], 1), file["date"], file["name"]
-        )
-        print(row)
+        if type(file) is list:
+            pass
+        else:
+            row = "{: <8} {: >10} {: <10}".format(
+                human_readable_size(file["size"], 1), file["date"], file["name"]
+            )
+            print(row)
 
 
 @cli.command()
