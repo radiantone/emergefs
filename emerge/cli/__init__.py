@@ -63,6 +63,14 @@ def start(context):
     node.start()
 
 
+def human_readable_size(size, decimal_places=2):
+    for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
+        if size < 1024.0 or unit == "PiB":
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f}{unit}"
+
+
 @cli.command()
 @click.argument("directory", default="/")
 @click.pass_context
@@ -72,8 +80,12 @@ def ls(context, directory):
     client = context.obj["client"]
 
     files = client.list(directory, offset=0, size=0)
-    for file in files:
-        click.echo(file.replace(directory + "/", ""))
+    for fname in files:
+        file = client.get(fname)
+        row = "{: <8} {: >10} {: <10}".format(
+            human_readable_size(file["size"], 1), file["date"], file["name"]
+        )
+        print(row)
 
 
 @cli.command()

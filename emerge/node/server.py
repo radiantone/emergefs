@@ -74,7 +74,7 @@ class NodeServer(Server):
             _obj = dill.loads(obj)
 
             file = {
-                "date": str(datetime.datetime.now()),
+                "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                 "path": _obj.path,
                 "name": _obj.name,
                 "id": _obj.id,

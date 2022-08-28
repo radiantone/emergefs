@@ -41,6 +41,6 @@ print(files)
 objs = [client.get(fid) for fid in files]
 print(objs)
 
-#objs = [client.get(fid['path']+"/"+fid['name']) for fid in files]
-#for o in objs:
+# objs = [client.get(fid['path']+"/"+fid['name']) for fid in files]
+# for o in objs:
 #    print("O:", o)
