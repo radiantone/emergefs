@@ -65,7 +65,3 @@ class Z0DBFileSystem(FileSystem):
     def shutdown(self) -> bool:
         logging.info("Z0DBFileSystem shutdown")
         return True
-
-    @property
-    def id(self):
-        pass

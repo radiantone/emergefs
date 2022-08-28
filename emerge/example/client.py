@@ -1,13 +1,15 @@
+import random
 from dataclasses import dataclass
 from typing import List
+
 from persistent import Persistent
 
-from emerge.data import EmergeData
 from emerge.core.client import Client
-from emerge.core.objects import File
+from emerge.core.objects import EmergeFile
+from emerge.data import EmergeData
 
 
-class MyClass(File):
+class MyClass(EmergeFile):
     """Custom class"""
 
     text = None
@@ -52,7 +54,7 @@ our custom type using its data and methods """
 client = Client("0.0.0.0", "5558")
 
 """ Store a custom instance there """
-obj = MyClass("myclass")
+obj = MyClass(id="myclass", name="myclass", path="/classes")
 obj.text = "this is myclass of data"
 
 """ Store an object on a specific node """
@@ -76,3 +78,13 @@ client.store(item)
 print(item)
 
 print(client.run("widget1", "total_cost"))
+
+for i in range(0, 100):
+    item = InventoryItem(
+        id="widget:" + str(i),
+        name="widget",
+        unit_price=random.uniform(1.5, 75.5),
+        quantity_on_hand=random.randrange(0, 50),
+    )
+    print(item)
+    client.store(item)

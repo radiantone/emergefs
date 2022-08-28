@@ -1,9 +1,9 @@
 import sys
 
-from emerge.core.objects import File
+from emerge.core.objects import EmergeFile
 
 
-class Data(File):
+class Data(EmergeFile):
     def set_data(self, data):
         self.data = data
 

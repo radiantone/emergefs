@@ -29,21 +29,37 @@ class NodeServer(Server):
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
 
-        def get(self, oid):
-            return self.fs.objects[oid]
+        def get(self, path, page=0, size=-1):
+            import BTrees.OOBTree
+
+            obj = self.fs.objects[path]
+
+            if isinstance(obj, BTrees.OOBTree.OOBTree):
+                return dill.dumps([dill.loads(obj[o]) for o in obj])
+            else:
+                return obj
 
         def execute(self, oid, method):
             _obj = dill.loads(self.fs.objects[oid])
             _method = getattr(_obj, method)
             return _method()
 
-        def store(self, obj):
+        def store(self, id, path, name, obj):
+            import BTrees.OOBTree
             import dill
 
             _obj = dill.loads(obj)
             with self.fs.session():
-                self.fs.objects[_obj.id] = obj
-                logging.info("STORE OBJECT %s", _obj)
+                if path in self.fs.objects:
+                    directory = self.fs.objects[path]
+                else:
+                    directory = BTrees.OOBTree.BTree()
+                    self.fs.objects[path] = directory
+
+                directory[id] = obj
+                self.fs.objects[path + "/" + name] = obj
+
+                logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
 
         def get_data(self, oid):
             obj: Data = self.fs.objects[oid]
@@ -160,13 +176,35 @@ class NodeServer(Server):
         objects = self.fs.objects
 
         logging.info("objects length: %s %s", objects, len(objects))
+
         for object_ in objects:
             object__: Data = objects[object_]
 
             if type(object__) is bytes:
                 object__ = dill.loads(object__)
+                # objects[object_] = object__
+            try:
+                logging.info(
+                    "object: %s %s %s",
+                    type(object__),
+                    object__.id,
+                    str(object__.unit_price),
+                )
+            except:
+                pass
 
-            logging.info("object: %s %s", object__.id, object__)
+        from functools import reduce
+
+        sum_a = reduce(
+            lambda x, y: x + y,
+            [
+                obj.unit_price
+                for obj in (dill.loads(objects[name]) for name in objects)
+                if hasattr(obj, "unit_price")
+            ],
+        )
+
+        print("SUM:", sum_a)
 
         if len(objects) == 0:
             with self.fs.session():

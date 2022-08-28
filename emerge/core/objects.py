@@ -1,7 +1,8 @@
 """ Handlers are responsible for handling message types received by a node server """
 from abc import ABCMeta, abstractmethod
+from dataclasses import dataclass
 
-import persistent
+from emerge.data import EmergeData
 
 
 class Server(metaclass=ABCMeta):
@@ -22,30 +23,28 @@ class Server(metaclass=ABCMeta):
         pass
 
 
-class Object(persistent.Persistent):
-    """Any object in emerge"""
+@dataclass
+class EmergeObject(EmergeData):
+    """Class for keeping track of an item in inventory."""
 
-    def __init__(self, oid):
-        self.oid = oid
-
-    @property
-    def id(self):
-        return self.oid
+    id: str
 
 
-class Block(Object):
+class EmergeBlock(EmergeObject):
     """Holds references to block"""
 
     pass
 
 
-class File(Object):
+@dataclass
+class EmergeFile(EmergeObject):
     """Holds references to file"""
 
-    pass
+    name: str
+    path: str
 
 
-class FileSystem(Server, Object):
+class FileSystem(Server, EmergeObject):
     """A persistent filesystem"""
 
     def start(self) -> bool:

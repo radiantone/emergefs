@@ -1,5 +1,7 @@
-import json
 import dataclasses
+import json
+from typing import Any
+
 from persistent import Persistent
 
 
@@ -12,6 +14,7 @@ class EnhancedJSONEncoder(json.JSONEncoder):
 
 class EmergeData(Persistent):
 
+    data: Any
+
     def __str__(self):
         return json.dumps(self, indent=4, cls=EnhancedJSONEncoder)
-

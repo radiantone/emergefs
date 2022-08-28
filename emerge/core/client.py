@@ -8,7 +8,7 @@ class Client:
         self.client.connect("tcp://{}:{}".format(host, port))
 
     def store(self, obj):
-        self.client.store(dill.dumps(obj))
+        self.client.store(obj.id, obj.path, obj.name, dill.dumps(obj))
 
     def get(self, oid):
         return dill.loads(self.client.get(oid))
