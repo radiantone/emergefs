@@ -1,5 +1,6 @@
 #!/bin/bash
 python setup.py install
+git add .gitignore
 git add docs
 git add bin
 git add diary.md
