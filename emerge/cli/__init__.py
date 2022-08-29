@@ -81,14 +81,19 @@ def ls(context, directory):
 
     files = client.list(directory, offset=0, size=0)
     for fname in files:
-        file = client.get(fname)
-        if type(file) is list:
-            pass
-        else:
-            row = "{: <8} {: >10} {: <10}".format(
-                human_readable_size(file["size"], 1), file["date"], file["name"]
-            )
+        if fname.find("dir") == 0:
+            parts = fname.split(":")
+            row = "{: <8} {: >10} {: <10}".format("", "", fname)
             print(row)
+        else:
+            file = client.get(fname)
+            if type(file) is list:
+                pass
+            else:
+                row = "{: <8} {: >10} {: <10}".format(
+                    human_readable_size(file["size"], 1), file["date"], file["name"]
+                )
+                print(row)
 
 
 @cli.command()
@@ -99,4 +104,6 @@ def cat(context, path):
     client = context.obj["client"]
 
     file = client.get(path)
+    file["data"] = file["obj"].data
+    del file["obj"]
     print(file)

@@ -6,7 +6,6 @@ from persistent import Persistent
 
 from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
-from emerge.data import EmergeData
 
 
 class MyClass(EmergeFile):
@@ -31,7 +30,7 @@ class Collection(Persistent):
 
 
 @dataclass
-class InventoryItem(EmergeData):
+class InventoryItem(EmergeFile):
     """Class for keeping track of an item in inventory."""
 
     name: str
@@ -61,28 +60,31 @@ obj.text = "this is myclass of data"
 client.store(obj)
 
 """ Ask for it back """
-obj = client.get("myclass")
+obj = client.get("/classes/myclass")
 
 """ Execute a method locally on this host """
 print("Getting data and word count")
-print(obj.data())
-print(obj.word_count())
+print(obj["obj"].data)
+print(obj["obj"].word_count())
 print()
 
 """ Run the object as a service on the remote node """
 print("Executing run on server")
-print(client.run("myclass", "run"))
+print(client.run("/classes/myclass", "run"))
 
-item = InventoryItem(id="widget1", name="widget", unit_price=3.0, quantity_on_hand=10)
+item = InventoryItem(
+    id="widget1", name="widget", path="/inventory", unit_price=3.0, quantity_on_hand=10
+)
 client.store(item)
 print(item)
 
-print(client.run("widget1", "total_cost"))
+print(client.run("/inventory/widget", "total_cost"))
 
 for i in range(0, 100):
     item = InventoryItem(
         id="widget:" + str(i),
-        name="widget",
+        name="widget" + str(i),
+        path="/inventory",
         unit_price=random.uniform(1.5, 75.5),
         quantity_on_hand=random.randrange(0, 50),
     )

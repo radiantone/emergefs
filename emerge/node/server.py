@@ -57,7 +57,7 @@ class NodeServer(Server):
                 for o in obj:
                     print("O", obj[o])
                     if isinstance(obj[o], BTrees.OOBTree.OOBTree):
-                        files += [path]
+                        files += ["dir:" + path]
                     else:
                         files += [obj[o]["path"] + "/" + obj[o]["name"]]
 
@@ -67,7 +67,7 @@ class NodeServer(Server):
                 return obj.path + "/" + obj.name
 
         def execute(self, oid, method):
-            _obj = dill.loads(self.fs.objects[oid])
+            _obj = dill.loads(self.fs.objects[oid]["obj"])
             _method = getattr(_obj, method)
             return _method()
 
