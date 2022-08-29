@@ -33,8 +33,8 @@ class Z0DBFileSystem(FileSystem):
         logging.info("Z0DBFileSystem setup")
         storage = ZODB.FileStorage.FileStorage("emerge.fs")
         db = self.db = ZODB.DB(storage)
-        connection = db.open()
-        self.root = connection.root()
+        self.connection = db.open()
+        self.root = self.connection.root()
         if not hasattr(self.root, "objects"):
 
             transaction.begin()
@@ -43,8 +43,10 @@ class Z0DBFileSystem(FileSystem):
 
             directory = BTrees.OOBTree.BTree()
             self.root.objects["/"] = directory
+            # self.root.objects["/"]["test"] = {"name": "this is a test"}
 
             transaction.commit()
+
         self.objects = self.root.objects
 
         return True

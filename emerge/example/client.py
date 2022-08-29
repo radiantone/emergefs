@@ -80,7 +80,7 @@ print(item)
 
 print(client.run("/inventory/widget", "total_cost"))
 
-for i in range(0, 100):
+for i in range(0, 10):
     item = InventoryItem(
         id="widget:" + str(i),
         name="widget" + str(i),

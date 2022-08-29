@@ -24,8 +24,10 @@ class NodeServer(Server):
 
         name = "NodeAPI"
 
-        def __init__(self, fs):
-            self.fs = fs
+        def __init__(self):
+            self.fs = FileSystemFactory.get()
+            self.fs.setup()
+            self.fs.start()
 
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
@@ -89,25 +91,27 @@ class NodeServer(Server):
             }
 
             with self.fs.session():
-                if path in self.fs.objects:
-                    directory = self.fs.objects[path]
+                if path in self.fs.root.objects:
+                    directory = self.fs.root.objects[path]
                     print("GETTING BTREE FOR", path)
                     print([name for name in directory])
                 else:
                     print("CREATING NEW BTREE FOR", path)
                     directory = BTrees.OOBTree.BTree()
-                    self.fs.objects[path] = directory
+                    self.fs.root.objects[path] = directory
 
                 directory[id] = file
 
                 if path[-1] != "/":
-                    self.fs.objects[path + "/" + name] = file
+                    self.fs.root.objects[path + "/" + name] = file
                     print("ADDED", path + "/" + name)
                 else:
-                    self.fs.objects[path + name] = file
+                    self.fs.root.objects[path + name] = file
                     print("ADDED", path + name)
 
-                logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
+            assert self.fs.objects == self.fs.root.objects
+            # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
+            # logging.info("OBJECTS LENGTH %s", len(self.fs.objects))
 
         def get_data(self, oid):
             obj: Data = self.fs.objects[oid]
@@ -155,7 +159,7 @@ class NodeServer(Server):
 
         def start_rpc():
             """Listen for RPC events"""
-            s = zerorpc.Server(self.NodeAPI(self.fs))
+            s = zerorpc.Server(self.NodeAPI())
             s.bind("tcp://0.0.0.0:{}".format(self.rpcport))
             s.run()
 
@@ -183,8 +187,8 @@ class NodeServer(Server):
                     client.connect(parts[2])
                     client.hello("tcp://0.0.0.0:{}".format(self.rpcport))
 
-        fs = self.fs = FileSystemFactory.get()
-        self.services += [fs]
+        # fs = self.fs = FileSystemFactory.get()
+        # self.services += [fs]
         import threading
 
         self.process = threading.Thread(target=get_messages)
@@ -225,12 +229,22 @@ class NodeServer(Server):
 
         [service.start() for service in self.services]
 
+        """
         objects = self.fs.objects
 
-        logging.info("objects length: %s %s", objects, len(objects))
+        logging.info("objects length: %s %s", objects, len(objects["/"]))
+        print([name for name in objects["/"]])
 
-        for object_ in objects:
-            object__: Data = objects[object_]
+        with self.fs.session():
+            self.fs.objects["/"]["test"] = {"name": "this is a test"}
+            print("ADDED TEST")
+
+        inventory = self.fs.objects["/inventory"]
+
+        logging.info("objects length: %s %s", inventory, len(inventory))
+
+        for object_ in inventory:
+            object__: Data = inventory[object_]
 
             if type(object__) is bytes:
                 object__ = dill.loads(object__)
@@ -246,18 +260,28 @@ class NodeServer(Server):
                 pass
         from functools import reduce
 
+        for name in inventory:
+            print(type(inventory[name]))
         try:
             sum_a = reduce(
                 lambda x, y: x + y,
                 [
                     obj.unit_price
-                    for obj in (dill.loads(objects[name]) for name in objects)
+                    for obj in (
+                        dill.loads(inventory[name])
+                        for name in inventory
+                        if type(inventory[name]) is bytes
+                    )
                     if hasattr(obj, "unit_price")
                 ],
             )
 
             print("SUM:", sum_a)
         except:
+            import traceback
+
+            print(traceback.format_exc())
             pass
+        """
 
         return True

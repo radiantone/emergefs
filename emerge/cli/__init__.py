@@ -72,9 +72,10 @@ def human_readable_size(size, decimal_places=2):
 
 
 @cli.command()
+@click.option("-l", "long", is_flag=True)
 @click.argument("directory", default="/")
 @click.pass_context
-def ls(context, directory):
+def ls(context, long, directory):
     """List files in a directory"""
 
     client = context.obj["client"]
@@ -84,7 +85,11 @@ def ls(context, directory):
         if fname.find("dir") == 0:
             parts = fname.split(":")
             row = "{: <8} {: >10} {: <10}".format("", "", fname)
-            print(row)
+
+            if long:
+                print(row)
+            else:
+                print(file["name"])
         else:
             file = client.get(fname)
             if type(file) is list:
@@ -93,7 +98,11 @@ def ls(context, directory):
                 row = "{: <8} {: >10} {: <10}".format(
                     human_readable_size(file["size"], 1), file["date"], file["name"]
                 )
-                print(row)
+
+                if long:
+                    print(row)
+                else:
+                    print(file["name"])
 
 
 @cli.command()
