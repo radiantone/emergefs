@@ -40,8 +40,11 @@ class EmergeBlock(EmergeObject):
 class EmergeFile(EmergeObject):
     """Holds references to file"""
 
-    name: str
-    path: str
+    name: str = ""
+    path: str = "/"
+    perms: str = "rwxrwxrwx"
+    type: str = "file"
+    data: str = ""
 
 
 class FileSystem(Server, EmergeObject):

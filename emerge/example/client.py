@@ -33,9 +33,8 @@ class Collection(Persistent):
 class InventoryItem(EmergeFile):
     """Class for keeping track of an item in inventory."""
 
-    name: str
-    unit_price: float
-    id: str
+    unit_price: float = 0.0
+    id: str = ""
     quantity_on_hand: int = 0
 
     def run(self):
@@ -73,7 +72,12 @@ print("Executing run on server")
 print(client.run("/classes/myclass", "run"))
 
 item = InventoryItem(
-    id="widget1", name="widget", path="/inventory", unit_price=3.0, quantity_on_hand=10
+    id="widget1",
+    name="widget",
+    path="/inventory",
+    unit_price=3.0,
+    quantity_on_hand=10,
+    data="A widget{} data".format(1),
 )
 client.store(item)
 print(item)
@@ -84,7 +88,10 @@ for i in range(0, 10):
     item = InventoryItem(
         id="widget:" + str(i),
         name="widget" + str(i),
+        perms="rwxrwxrwx",
+        type="file",
         path="/inventory",
+        data="A widget{} data".format(i),
         unit_price=random.uniform(1.5, 75.5),
         quantity_on_hand=random.randrange(0, 50),
     )

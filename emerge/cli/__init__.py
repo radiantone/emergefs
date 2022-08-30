@@ -64,7 +64,7 @@ def start(context):
 
 
 def human_readable_size(size, decimal_places=2):
-    for unit in ["B", "KiB", "MiB", "GiB", "TiB", "PiB"]:
+    for unit in ["B", "K", "M", "G", "T", "P"]:
         if size < 1024.0 or unit == "PiB":
             break
         size /= 1024.0
@@ -80,23 +80,50 @@ def ls(context, long, directory):
 
     client = context.obj["client"]
 
+    class bcolors:
+        HEADER = "\033[95m"
+        OKBLUE = "\033[94m"
+        OKCYAN = "\033[96m"
+        OKGREEN = "\033[92m"
+        WARNING = "\033[93m"
+        FAIL = "\033[91m"
+        ENDC = "\033[0m"
+        BOLD = "\033[1m"
+        UNDERLINE = "\033[4m"
+
     files = client.list(directory, offset=0, size=0)
+    files = reversed(sorted(files))
     for fname in files:
         if fname.find("dir") == 0:
-            parts = fname.split(":")
-            row = "{: <8} {: >10} {: <10}".format("", "", fname)
+            if fname == "dir:/" or fname == "dir:/registry":
+                continue
+
+            fname = fname.replace("dir:", "")
+            file = client.get(fname + ".dir")
+            row = "{} {: <8} {: >10} {} {} {}".format(
+                file["perms"],
+                human_readable_size(file["size"], 1),
+                file["date"],
+                bcolors.OKBLUE,
+                fname.replace("/", ""),
+                bcolors.ENDC,
+            )
 
             if long:
                 print(row)
             else:
-                print(file["name"])
+                print(fname)
         else:
             file = client.get(fname)
             if type(file) is list:
                 pass
             else:
-                row = "{: <8} {: >10} {: <10}".format(
-                    human_readable_size(file["size"], 1), file["date"], file["name"]
+                row = "{} {: <8} {: >10} {} {: <10}".format(
+                    file["perms"],
+                    human_readable_size(file["size"], 1),
+                    file["date"],
+                    bcolors.ENDC,
+                    file["name"],
                 )
 
                 if long:

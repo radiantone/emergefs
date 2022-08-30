@@ -29,13 +29,51 @@ class NodeServer(Server):
             self.fs.setup()
             self.fs.start()
 
+        def sum(self):
+
+            inventory = self.fs.objects["/inventory"]
+
+            logging.info("objects length: %s %s", inventory, len(inventory))
+
+            for object_ in inventory:
+                object__: Data = inventory[object_]
+
+                if type(object__) is bytes:
+                    object__ = dill.loads(object__)
+                    # objects[object_] = object__
+                try:
+                    logging.info(
+                        "object: %s %s %s",
+                        type(object__),
+                        object__.id,
+                        str(object__.unit_price),
+                    )
+                except:
+                    pass
+            from functools import reduce
+
+            try:
+                sum_a = reduce(
+                    lambda x, y: x + y,
+                    [
+                        dill.loads(inventory[name]["obj"]).unit_price
+                        for name in inventory
+                    ],
+                )
+
+                print("SUM:", sum_a)
+            except:
+                import traceback
+
+                print(traceback.format_exc())
+                pass
+
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
 
         def get(self, path, page=0, size=-1):
 
-            print("PATH", path)
-            obj = self.fs.objects[path]
+            obj = self.fs.objects["/registry"][path]
 
             if isinstance(obj, BTrees.OOBTree.OOBTree):
                 # return dill.dumps([dill.loads(obj[o]) for o in obj])
@@ -47,29 +85,29 @@ class NodeServer(Server):
         def list(self, path, offset=0, size=0):
             import BTrees.OOBTree
 
-            print("PATH", path)
             if path != "/":
                 obj = self.fs.objects[path]
             else:
                 obj = self.fs.objects
 
             if isinstance(obj, BTrees.OOBTree.OOBTree):
-                print("BTREE", path, obj)
                 files = []
                 for o in obj:
-                    print("O", obj[o])
                     if isinstance(obj[o], BTrees.OOBTree.OOBTree):
-                        files += ["dir:" + path]
+                        files += ["dir:" + o]
                     else:
-                        files += [obj[o]["path"] + "/" + obj[o]["name"]]
+                        if obj[o]["type"] == "file":
+                            files += [obj[o]["path"] + "/" + obj[o]["name"]]
 
-                print(path, files)
                 return dill.dumps(files)
             else:
-                return obj.path + "/" + obj.name
+                if obj.type == "file":
+                    return obj.path + "/" + obj.name
+                else:
+                    return obj.path
 
         def execute(self, oid, method):
-            _obj = dill.loads(self.fs.objects[oid]["obj"])
+            _obj = dill.loads(self.fs.objects["/registry"][oid]["obj"])
             _method = getattr(_obj, method)
             return _method()
 
@@ -86,6 +124,8 @@ class NodeServer(Server):
                 "path": _obj.path,
                 "name": _obj.name,
                 "id": _obj.id,
+                "perms": _obj.perms,
+                "type": _obj.type,
                 "size": len(obj),
                 "obj": obj,
             }
@@ -93,21 +133,47 @@ class NodeServer(Server):
             with self.fs.session():
                 if path in self.fs.root.objects:
                     directory = self.fs.root.objects[path]
-                    print("GETTING BTREE FOR", path)
-                    print([name for name in directory])
                 else:
-                    print("CREATING NEW BTREE FOR", path)
-                    directory = BTrees.OOBTree.BTree()
-                    self.fs.root.objects[path] = directory
 
+                    paths = path.split("/")[1:]
+                    base = ""
+                    root = self.fs.root.objects
+                    logging.info("store: paths: %s", paths)
+
+                    for p in paths:
+                        _path = base + "/" + p
+                        if _path in root:
+                            logging.info("store: found path: %s in root", _path)
+                            directory = root[_path]
+                        else:
+                            root[_path] = BTrees.OOBTree.BTree()
+                            base = _path
+                            dir = {
+                                "date": str(
+                                    datetime.datetime.now().strftime(
+                                        "%b %d %Y %H:%M:%S"
+                                    )
+                                ),
+                                "path": _path,
+                                "name": "",
+                                "id": _path,
+                                "perms": "rwxrwxrwx",
+                                "type": "directory",
+                                "size": 0,
+                            }
+                            root[_path + ".dir"] = dir
+                            self.fs.root.objects["/registry"][_path + ".dir"] = dir
+                            logging.info("store: new root at %s", _path)
+                            root = root[_path]
+                            directory = root
+
+                logging.info("Adding file to %s", directory)
                 directory[id] = file
 
-                if path[-1] != "/":
-                    self.fs.root.objects[path + "/" + name] = file
-                    print("ADDED", path + "/" + name)
+                if path[-1] != "/" and len(name) > 0:
+                    self.fs.root.objects["/registry"][path + "/" + name] = file
                 else:
-                    self.fs.root.objects[path + name] = file
-                    print("ADDED", path + name)
+                    self.fs.root.objects["/registry"][path + name] = file
 
             assert self.fs.objects == self.fs.root.objects
             # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
@@ -228,60 +294,5 @@ class NodeServer(Server):
         socket.send_string("NODE HI {}".format("tcp://0.0.0.0:{}".format(self.rpcport)))
 
         [service.start() for service in self.services]
-
-        """
-        objects = self.fs.objects
-
-        logging.info("objects length: %s %s", objects, len(objects["/"]))
-        print([name for name in objects["/"]])
-
-        with self.fs.session():
-            self.fs.objects["/"]["test"] = {"name": "this is a test"}
-            print("ADDED TEST")
-
-        inventory = self.fs.objects["/inventory"]
-
-        logging.info("objects length: %s %s", inventory, len(inventory))
-
-        for object_ in inventory:
-            object__: Data = inventory[object_]
-
-            if type(object__) is bytes:
-                object__ = dill.loads(object__)
-                # objects[object_] = object__
-            try:
-                logging.info(
-                    "object: %s %s %s",
-                    type(object__),
-                    object__.id,
-                    str(object__.unit_price),
-                )
-            except:
-                pass
-        from functools import reduce
-
-        for name in inventory:
-            print(type(inventory[name]))
-        try:
-            sum_a = reduce(
-                lambda x, y: x + y,
-                [
-                    obj.unit_price
-                    for obj in (
-                        dill.loads(inventory[name])
-                        for name in inventory
-                        if type(inventory[name]) is bytes
-                    )
-                    if hasattr(obj, "unit_price")
-                ],
-            )
-
-            print("SUM:", sum_a)
-        except:
-            import traceback
-
-            print(traceback.format_exc())
-            pass
-        """
 
         return True

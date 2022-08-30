@@ -43,6 +43,8 @@ class Z0DBFileSystem(FileSystem):
 
             directory = BTrees.OOBTree.BTree()
             self.root.objects["/"] = directory
+            registry = BTrees.OOBTree.BTree()
+            self.root.objects["/registry"] = registry
             # self.root.objects["/"]["test"] = {"name": "this is a test"}
 
             transaction.commit()

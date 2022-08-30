@@ -20,13 +20,14 @@ class Client:
         if type(file) is list:
             for f in file:
                 _f = dill.loads(f)
-                print("_F", _f)
-                _f["obj"] = dill.loads(_f["obj"])
-                print("_F2", _f)
+                if "obj" in _f:
+                    _f["obj"] = dill.loads(_f["obj"])
                 _files += [_f]
         else:
-            file["obj"] = dill.loads(file["obj"])
+            if "obj" in file:
+                file["obj"] = dill.loads(file["obj"])
             _files = file
+
         return _files
 
     def run(self, oid, method):
