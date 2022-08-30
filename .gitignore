@@ -5,6 +5,7 @@ build
 emerge.f*
 tmp
 git
+img/logo.xcf
 docs/_build
 dist
 *egg-info

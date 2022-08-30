@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+
+  broker:
+    image: radiantone/emerge:latest
+    hostname: broker
+    build:
+      dockerfile: Dockerfile
+    container_name: broker
+    #command: ["/opt/emerge/venv/bin/emerge --debug node start"]
+    ports:
+      - "6558:5558"
+    networks:
+      - emerge
+    volumes:
+      - .:/opt/emerge/code
+
+  emerge2:
+    image: radiantone/emerge:latest
+    hostname: emerge2
+    build:
+      dockerfile: Dockerfile
+    container_name: emerge2
+    #command: ["/opt/emerge/venv/bin/emerge --debug node start"]
+    depends_on:
+      - broker
+    ports:
+      - "6559:5558"
+    links:
+      - broker
+    environment:
+      BROKER: "broker"
+    networks:
+      - emerge
+    volumes:
+      - .:/opt/emerge/code
+
+networks:
+  emerge: {}
