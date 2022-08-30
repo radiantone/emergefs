@@ -41,12 +41,12 @@ class Z0DBFileSystem(FileSystem):
             logging.info("Creating new objects collection")
             self.root.objects = BTrees.OOBTree.BTree()
 
-            directory = BTrees.OOBTree.BTree()
-            self.root.objects["/"] = directory
+            #directory = BTrees.OOBTree.BTree()
+            #self.root.objects["/"] = directory
             registry = BTrees.OOBTree.BTree()
-            self.root.objects["/registry"] = registry
+            self.root.registry = registry
             # self.root.objects["/"]["test"] = {"name": "this is a test"}
-
+            self.registry = registry
             transaction.commit()
 
         self.objects = self.root.objects

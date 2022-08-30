@@ -2,6 +2,7 @@ import logging
 import sys
 
 import click
+from zerorpc.exceptions import RemoteError
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,7 +37,7 @@ def cli(context, debug):
     from emerge.core.client import Client
 
     """ Connect to specific Node """
-    client = Client("0.0.0.0", "5558")
+    client = Client("0.0.0.0", "6558")
 
     context.obj = {}
 
@@ -91,7 +92,13 @@ def ls(context, long, directory):
         BOLD = "\033[1m"
         UNDERLINE = "\033[4m"
 
-    files = client.list(directory, offset=0, size=0)
+    try:
+        files = client.list(directory, offset=0, size=0)
+    except RemoteError:
+        click.echo("Object {} not found.".format(directory))
+        return
+
+    logging.debug("FILES:%s", files)
     files = reversed(sorted(files))
     for fname in files:
         if fname.find("dir") == 0:
@@ -99,20 +106,23 @@ def ls(context, long, directory):
                 continue
 
             fname = fname.replace("dir:", "")
-            file = client.get(fname + ".dir")
+            logging.debug("Getting fname {}".format(fname))
+
+            file = client.get(fname)
+            logging.debug("client.get({}) = {}".format(fname, file))
             row = "{} {: <8} {: >10} {} {} {}".format(
                 file["perms"],
                 human_readable_size(file["size"], 1),
                 file["date"],
                 bcolors.OKBLUE,
-                fname.replace("/", ""),
+                fname.replace(directory,""),
                 bcolors.ENDC,
             )
 
             if long:
                 print(row)
             else:
-                print(fname)
+                print(fname.replace(directory,""))
         else:
             file = client.get(fname)
             if type(file) is list:
@@ -129,7 +139,7 @@ def ls(context, long, directory):
                 if long:
                     print(row)
                 else:
-                    print(file["name"])
+                    print(file["name"].replace(directory,""))
 
 
 @cli.command()
@@ -139,7 +149,5 @@ def cat(context, path):
     """Display contents of a file"""
     client = context.obj["client"]
 
-    file = client.get(path)
-    file["data"] = file["obj"].data
-    del file["obj"]
+    file = client.getobject(path)
     print(file)

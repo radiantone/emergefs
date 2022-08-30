@@ -1,6 +1,6 @@
 import dill
 import zerorpc
-
+import logging
 
 class Client:
     def __init__(self, host, port):
@@ -13,9 +13,13 @@ class Client:
     def list(self, path, offset=0, size=0):
         return dill.loads(self.client.list(path, offset, size))
 
+    def getobject(self, path, offset=0, size=0):
+        file = self.client.getobject(path, offset=offset, size=size)
+        _file = dill.loads(file)
+        return _file
+
     def get(self, oid, offset=0, size=0):
         file = self.client.get(oid, offset=offset, size=size)
-
         _files = []
         if type(file) is list:
             for f in file:

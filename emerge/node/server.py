@@ -50,6 +50,7 @@ class NodeServer(Server):
                     )
                 except:
                     pass
+
             from functools import reduce
 
             try:
@@ -64,16 +65,45 @@ class NodeServer(Server):
                 print("SUM:", sum_a)
             except:
                 import traceback
-
                 print(traceback.format_exc())
-                pass
 
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
 
+        def getobject(self, path, page=0, size=-1):
+
+            logging.info("get: path = %s", path)
+            obj = self.fs.root.registry[path]
+
+            if obj["type"] == "file":
+                return obj["obj"]
+            elif obj["type"] == "directory":
+                return [obj[o]["obj"] for o in obj["dir"]]
+
         def get(self, path, page=0, size=-1):
 
-            obj = self.fs.objects["/registry"][path]
+            logging.info("get: path = %s", path)
+            obj = self.fs.root.registry[path]
+
+            file = {
+                "date": obj["date"],
+                "path": obj["path"],
+                "name": obj["name"],
+                "id": obj["id"],
+                "perms": obj["perms"],
+                "type": obj["type"],
+                "size": obj["size"],
+            }
+
+            return file
+
+        def getdir(self, path, page=0, size=-1):
+
+            logging.info("get: path = %s", path)
+            obj = self.fs.root.registry[path]
+
+            if obj["type"] == "directory":
+                return [dill.dumps(obj["dir"][o]) for o in obj["dir"]]
 
             if isinstance(obj, BTrees.OOBTree.OOBTree):
                 # return dill.dumps([dill.loads(obj[o]) for o in obj])
@@ -83,37 +113,49 @@ class NodeServer(Server):
                 return obj
 
         def list(self, path, offset=0, size=0):
-            import BTrees.OOBTree
+            logging.info("list: path %s", path)
+            logging.info("root id is %s", self.fs.root.objects)
 
+            logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
             if path != "/":
-                obj = self.fs.objects[path]
+                paths = path.split("/")[1:]
+                dir = self.fs.objects
+                for p in paths:
+                    logging.info("list: p %s of paths %s",p, paths)
+                    file = dir[p]
+                    if file["type"] == "directory":
+                        dir = file["dir"]
+                    elif file["type"] == "file":
+                        return dill.dumps(file)
+                obj = dir
+                logging.info("found %s in %s %s", path, dir, len(obj))
             else:
-                obj = self.fs.objects
+                obj = self.fs.root.objects
+                logging.info("obj is self.fs.objects %s", len(obj))
 
-            if isinstance(obj, BTrees.OOBTree.OOBTree):
-                files = []
-                for o in obj:
-                    if isinstance(obj[o], BTrees.OOBTree.OOBTree):
-                        files += ["dir:" + o]
-                    else:
-                        if obj[o]["type"] == "file":
-                            files += [obj[o]["path"] + "/" + obj[o]["name"]]
+            logging.info("LIST: %s", list(obj))
 
-                return dill.dumps(files)
-            else:
-                if obj.type == "file":
-                    return obj.path + "/" + obj.name
+            files = []
+
+            for name in obj:
+                file = obj[name]
+                if file["type"] == "directory":
+                    files += ["dir:" + file["name"]]
+                elif file["type"] == "file":
+                    files += [file["path"] + "/" + file["name"]]
                 else:
-                    return obj.path
+                    files += [file["path"]]
+
+            logging.info("RETURNING FILES: %s", files)
+            return dill.dumps(files)
 
         def execute(self, oid, method):
-            _obj = dill.loads(self.fs.objects["/registry"][oid]["obj"])
+            _obj = dill.loads(self.fs.objects[oid]["obj"])
             _method = getattr(_obj, method)
             return _method()
 
         def store(self, id, path, name, obj):
             import datetime
-
             import BTrees.OOBTree
             import dill
 
@@ -131,23 +173,30 @@ class NodeServer(Server):
             }
 
             with self.fs.session():
+
+                """ If the path is already created, set the directory to that path """
                 if path in self.fs.root.objects:
                     directory = self.fs.root.objects[path]
+                    logging.info("Found %s in self.fs.root.objects", path)
                 else:
-
+                    """ Create all the BTree objects for each section in the path """
                     paths = path.split("/")[1:]
                     base = ""
-                    root = self.fs.root.objects
+                    root = _root = self.fs.root.objects
                     logging.info("store: paths: %s", paths)
+                    logging.info("root id %s", root)
 
+                    """ Create BTree directories for each subpath if it doesn't exist 
+                    then set the directory to the last BTree in the path """
                     for p in paths:
                         _path = base + "/" + p
-                        if _path in root:
-                            logging.info("store: found path: %s in root", _path)
-                            directory = root[_path]
-                        else:
-                            root[_path] = BTrees.OOBTree.BTree()
+                        logging.info("store: _path is now %s",_path)
+                        if p in root:
+                            logging.info("store: p %s found in root %s", p, root)
+                            root = directory = root[p]["dir"]
+                            logging.info("store: new root is %s", root)
                             base = _path
+                        else:
                             dir = {
                                 "date": str(
                                     datetime.datetime.now().strftime(
@@ -155,26 +204,33 @@ class NodeServer(Server):
                                     )
                                 ),
                                 "path": _path,
-                                "name": "",
+                                "name": _path,
                                 "id": _path,
                                 "perms": "rwxrwxrwx",
                                 "type": "directory",
                                 "size": 0,
+                                "dir": BTrees.OOBTree.BTree()
                             }
-                            root[_path + ".dir"] = dir
-                            self.fs.root.objects["/registry"][_path + ".dir"] = dir
-                            logging.info("store: new root at %s", _path)
-                            root = root[_path]
-                            directory = root
 
-                logging.info("Adding file to %s", directory)
+                            logging.info("store: new dir id is %s", dir["dir"])
+                            root[p] = dir
+                            logging.info("store: added new dir id %s to current root %s with key %s", dir, root, p)
+                            logging.info("store: added dir is %s", root[p])
+                            directory = root = dir["dir"]
+                            self.fs.root.registry[_path] = dir
+
+                        logging.info("root id is now %s", root)
+                logging.info("Adding file  %s to directory  [%s]", id, directory)
                 directory[id] = file
 
                 if path[-1] != "/" and len(name) > 0:
-                    self.fs.root.objects["/registry"][path + "/" + name] = file
+                    self.fs.root.registry[path + "/" + name] = file
+                    logging.info("Adding to registry %s %s",path + "/" + name, file)
                 else:
-                    self.fs.root.objects["/registry"][path + name] = file
+                    self.fs.root.registry[path + name] = file
+                    logging.info("Adding to registry %s %s",path + name, file)
 
+            logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
             assert self.fs.objects == self.fs.root.objects
             # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
             # logging.info("OBJECTS LENGTH %s", len(self.fs.objects))
@@ -230,13 +286,21 @@ class NodeServer(Server):
             s.run()
 
         def get_messages():
+            import os
+            import platform
+
             """Listen for pub/sub messages"""
             self.context = zmq.Context()
             self.socket = self.context.socket(zmq.SUB)
-            host = "127.0.0.1"
 
             """ Connect to pub/sub address """
-            self.socket.bind("tcp://{}:{}".format(host, self.port))
+
+            if "BROKER" in os.environ:
+                host = os.environ["BROKER"]
+                self.socket.connect("tcp://{}:{}".format(host, self.port))
+            else:
+                host = "0.0.0.0"
+                self.socket.bind("tcp://{}:{}".format(host, self.port))
 
             self.socket.subscribe("NODE")
             logging.debug(
@@ -250,8 +314,8 @@ class NodeServer(Server):
                 parts = string.split(" ")
                 if parts[1] == "HI":
                     client = zerorpc.Client()
-                    client.connect(parts[2])
-                    client.hello("tcp://0.0.0.0:{}".format(self.rpcport))
+                    client.connect(parts[3])
+                    client.hello("tcp://{}:{}".format(platform.node(), self.rpcport))
 
         # fs = self.fs = FileSystemFactory.get()
         # self.services += [fs]
@@ -282,7 +346,7 @@ class NodeServer(Server):
 
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
-        socket.connect("tcp://127.0.0.1:%s" % str(self.port))
+        socket.connect("tcp://broker:%s" % str(self.port))
 
         # Receives a string format message
 
@@ -290,8 +354,13 @@ class NodeServer(Server):
         self.rpc.start()
 
         time.sleep(1)
+        import platform
 
-        socket.send_string("NODE HI {}".format("tcp://0.0.0.0:{}".format(self.rpcport)))
+        message = "NODE HI {} {}".format(
+            platform.node(), "tcp://{}:{}".format(platform.node(), self.rpcport)
+        )
+        logging.info("Sending message: %s", message)
+        socket.send_string(message)
 
         [service.start() for service in self.services]
 

@@ -2,7 +2,7 @@ from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
 
 """ Connect to specific Node """
-client = Client("0.0.0.0", "5558")
+client = Client("0.0.0.0", "6558")
 """ Store a custom instance there """
 obj = EmergeFile(id="file123", name="file 123", path="/files")
 obj.data = "this is myclass of data"
@@ -17,7 +17,7 @@ print("OBJ", obj)
 files = client.get("/files")
 print("FILES", files)
 
-for i in range(0, 20):
+for i in range(0, 10):
     """Store a custom instance there"""
     obj = EmergeFile(id="file" + str(i), name="file " + str(i), path="/files")
     obj.data = "file {} data".format(i)
@@ -25,7 +25,7 @@ for i in range(0, 20):
     """ Store an object on a specific node """
     client.store(obj)
 
-    for x in range(0, 10):
+    for x in range(0, 2):
         obj = EmergeFile(
             id="file" + str(i) + ":" + str(x),
             name="file " + str(i) + ":" + str(x),
@@ -35,7 +35,7 @@ for i in range(0, 20):
 
         client.store(obj)
 
-files = client.list("/files/19", offset=0, size=0)
+files = client.list("/files/5", offset=0, size=0)
 print(files)
 
 objs = [client.get(fid) for fid in files]
