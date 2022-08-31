@@ -34,8 +34,7 @@ from emerge.core.objects import EmergeFile
 
 @dataclass
 class InventoryItem(EmergeFile):
-    """Class for keeping track of an item in inventory."""
-
+    
     unit_price: float = 0.0
     quantity_on_hand: int = 0
 
