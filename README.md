@@ -35,6 +35,7 @@ With emerge, you simply:
 - Ultra fast
 - Ultra simple
 - Plain Old Python end-to-end
+- Scriptable CLI for interacting with filesystem
 
 ## Examples
 
