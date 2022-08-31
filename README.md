@@ -16,7 +16,6 @@ Whereas with current REST/API type architectural patterns, you would do the foll
 - Write separate code still that translates from incoming requests to said operations and said objects (HTTP)
 - And keeping everything in sync, probably writing more code to make this maintenance headache easier
 - All these transformations are slow, difficult to manage and get in the way of actual work
-- 
 
 With emerge, you simply:
 
