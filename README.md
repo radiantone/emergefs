@@ -49,7 +49,7 @@ item = InventoryItem(
     data="A widget{} data".format(1),
 )
 
-client = Client("0.0.0.0", "6558")
+client = Client("0.0.0.0", "6558")  # Connect to any node
 
 client.store(item)
 ```
