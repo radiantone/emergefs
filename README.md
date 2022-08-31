@@ -1,6 +1,6 @@
 <img src="./img/logo.png" width="200">
 
-*Serverless, object-oriented, distributed file system*
+*Serverless, object-oriented, distributed file system for python*
 
 
 > emerge combines the notion of an object persistent store and service API mesh into one design as a distributed filesystem.
