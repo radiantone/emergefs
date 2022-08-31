@@ -38,9 +38,6 @@ class InventoryItem(EmergeFile):
     unit_price: float = 0.0
     quantity_on_hand: int = 0
 
-    def run(self):
-        return "total cost:{}".format(self.total_cost())
-
     def total_cost(self) -> float:
         return self.unit_price * self.quantity_on_hand
 
