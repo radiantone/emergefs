@@ -12,5 +12,4 @@ ADD README.md /opt/emerge
 ADD emerge /opt/emerge/emerge
 RUN venv/bin/python setup.py install
 
-
 CMD venv/bin/emerge --debug node start
