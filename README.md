@@ -76,6 +76,8 @@ For the widget object, the object size is shown 5.6K
 $ emerge remote /inventory/widget total_cost
 30.0
 ```
+> Important to understand that the custom class with its methods was created in the client, on-the-fly and stored in emerge.
+> No code update, recompile, redeploy of the emerge network is needed.
 
 ### Execute Local Methods
 
