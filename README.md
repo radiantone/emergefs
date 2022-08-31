@@ -25,6 +25,17 @@ With emerge, you simply:
 - Run methods on retrieved objects (locally or remotely: implicit servicing)
 - Celebrate!
 
+## Benefits
+
+- No Database schemas or query languages
+- No `Impedence Mismatches` between layers
+- No visible middleware
+- No protocol hassles
+- No API scaffolding
+- Ultra fast
+- Ultra simple
+- Plain Old Python end-to-end
+
 ## Examples
 
 ```python
