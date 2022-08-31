@@ -26,8 +26,7 @@ class Server(metaclass=ABCMeta):
 @dataclass
 class EmergeObject(EmergeData):
     """Class for keeping track of an item in inventory."""
-
-    id: str
+    pass
 
 
 class EmergeBlock(EmergeObject):
@@ -47,7 +46,7 @@ class EmergeFile(EmergeObject):
     data: str = ""
 
 
-class FileSystem(Server, EmergeObject):
+class FileSystem(Server):
     """A persistent filesystem"""
 
     def start(self) -> bool:

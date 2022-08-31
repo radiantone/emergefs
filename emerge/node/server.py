@@ -72,9 +72,10 @@ class NodeServer(Server):
 
         def getobject(self, path, page=0, size=-1):
 
-            logging.info("get: path = %s", path)
+            logging.info("getobject: path = %s", path)
             obj = self.fs.root.registry[path]
-
+            d = dill.loads(obj["obj"])
+            logging.info("OBJ %s", d.name)
             if obj["type"] == "file":
                 return obj["obj"]
             elif obj["type"] == "directory":
@@ -103,7 +104,7 @@ class NodeServer(Server):
 
         def getdir(self, path, page=0, size=-1):
 
-            logging.info("get: path = %s", path)
+            logging.info("getdir: path = %s", path)
             obj = self.fs.root.registry[path]
 
             if obj["type"] == "directory":
@@ -154,7 +155,7 @@ class NodeServer(Server):
             return dill.dumps(files)
 
         def execute(self, oid, method):
-            _obj = dill.loads(self.fs.objects[oid]["obj"])
+            _obj = dill.loads(self.fs.registry[oid]["obj"])
             _method = getattr(_obj, method)
             return _method()
 

@@ -1,4 +1,7 @@
 import random
+import json
+import dataclasses
+
 from dataclasses import dataclass
 from typing import List
 
@@ -25,7 +28,6 @@ class MyClass(EmergeFile):
 
 
 class Collection(Persistent):
-
     list: List = []
 
 
@@ -34,7 +36,6 @@ class InventoryItem(EmergeFile):
     """Class for keeping track of an item in inventory."""
 
     unit_price: float = 0.0
-    id: str = ""
     quantity_on_hand: int = 0
 
     def run(self):
@@ -42,6 +43,20 @@ class InventoryItem(EmergeFile):
 
     def total_cost(self) -> float:
         return self.unit_price * self.quantity_on_hand
+
+    def __str__(self):
+        import json
+
+        return json.dumps({
+            'name': self.name,
+            'path': self.path,
+            'id': self.id,
+            'price': self.unit_price,
+            'quantity': self.quantity_on_hand,
+            'perms': self.perms,
+            'type': self.type,
+            'data': self.data
+        })
 
 
 """ Here we create a custom object with some data and store/retrieve it.
@@ -56,20 +71,20 @@ obj = MyClass(id="myclass", name="myclass", path="/classes")
 obj.text = "this is myclass of data"
 
 """ Store an object on a specific node """
-client.store(obj)
+#client.store(obj)
 
 """ Ask for it back """
-obj = client.get("/classes/myclass")
+#obj = client.getobject("/classes/myclass")
 
 """ Execute a method locally on this host """
 print("Getting data and word count")
-print(obj["obj"].data)
-print(obj["obj"].word_count())
-print()
+#print(obj.data)
+#print(obj.word_count())
+#print()
 
 """ Run the object as a service on the remote node """
-print("Executing run on server")
-print(client.run("/classes/myclass", "run"))
+#print("Executing run on server")
+#print(client.run("/classes/myclass", "run"))
 
 item = InventoryItem(
     id="widget1",
@@ -84,6 +99,7 @@ print(item)
 
 print(client.run("/inventory/widget", "total_cost"))
 
+'''
 for i in range(0, 10):
     item = InventoryItem(
         id="widget:" + str(i),
@@ -97,3 +113,4 @@ for i in range(0, 10):
     )
     print(item)
     client.store(item)
+'''

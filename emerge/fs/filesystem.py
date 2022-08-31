@@ -20,7 +20,7 @@ class FileSystemFactory:
 
         class_ = getattr(current_module, cls.instance_class)
 
-        return class_("fs")
+        return class_()
 
 
 class Z0DBFileSystem(FileSystem):
@@ -41,12 +41,10 @@ class Z0DBFileSystem(FileSystem):
             logging.info("Creating new objects collection")
             self.root.objects = BTrees.OOBTree.BTree()
 
-            #directory = BTrees.OOBTree.BTree()
-            #self.root.objects["/"] = directory
             registry = BTrees.OOBTree.BTree()
             self.root.registry = registry
-            # self.root.objects["/"]["test"] = {"name": "this is a test"}
             self.registry = registry
+
             transaction.commit()
 
         self.objects = self.root.objects

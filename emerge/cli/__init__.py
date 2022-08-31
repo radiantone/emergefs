@@ -116,14 +116,14 @@ def ls(context, long, directory):
                 human_readable_size(file["size"], 1) if file["type"] == "file" else file["size"],
                 file["date"],
                 bcolors.OKBLUE,
-                fname.replace(directory,""),
+                fname.replace(directory, ""),
                 bcolors.ENDC,
             )
 
             if long:
                 print(row)
             else:
-                print(fname.replace(directory,""))
+                print(fname.replace(directory, ""))
         else:
             file = client.get(fname)
             if type(file) is list:
@@ -140,7 +140,7 @@ def ls(context, long, directory):
                 if long:
                     print(row)
                 else:
-                    print(file["name"].replace(directory,""))
+                    print(file["name"].replace(directory, ""))
 
 
 @cli.command()
@@ -148,7 +148,34 @@ def ls(context, long, directory):
 @click.pass_context
 def cat(context, path):
     """Display contents of a file"""
+    import dataclasses
+
     client = context.obj["client"]
 
     file = client.getobject(path)
     print(file)
+
+
+@cli.command()
+@click.argument("path")
+@click.argument("function")
+@click.pass_context
+def remote(context, path, function):
+    """Run an object function"""
+    client = context.obj["client"]
+
+    result = client.run(path, function)
+    print(result)
+
+
+@cli.command()
+@click.argument("path")
+@click.argument("function")
+@click.pass_context
+def local(context, path, function):
+    """Run an object function"""
+    client = context.obj["client"]
+
+    obj = client.getobject(path)
+    method = getattr(obj, function)
+    print(method())
