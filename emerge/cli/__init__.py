@@ -16,6 +16,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def human_readable_size(size, decimal_places=2):
+    for unit in ["B", "K", "M", "G", "T", "P"]:
+        if size < 1024.0 or unit == "PiB":
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f}{unit}"
+
+
 @click.group(invoke_without_command=True)
 @click.option("--debug", is_flag=True, default=False, help="Debug switch")
 @click.pass_context
@@ -64,14 +72,6 @@ def start(context):
     node.start()
 
 
-def human_readable_size(size, decimal_places=2):
-    for unit in ["B", "K", "M", "G", "T", "P"]:
-        if size < 1024.0 or unit == "PiB":
-            break
-        size /= 1024.0
-    return f"{size:.{decimal_places}f}{unit}"
-
-
 @cli.command()
 @click.option("-l", "long", is_flag=True)
 @click.argument("directory", default="/")
@@ -100,6 +100,7 @@ def ls(context, long, directory):
 
     logging.debug("FILES:%s", files)
     files = reversed(sorted(files))
+
     for fname in files:
         if fname.find("dir") == 0:
             if fname == "dir:/" or fname == "dir:/registry":
@@ -112,7 +113,7 @@ def ls(context, long, directory):
             logging.debug("client.get({}) = {}".format(fname, file))
             row = "{} {: <8} {: >10} {} {} {}".format(
                 file["perms"],
-                human_readable_size(file["size"], 1),
+                human_readable_size(file["size"], 1) if file["type"] == "file" else file["size"],
                 file["date"],
                 bcolors.OKBLUE,
                 fname.replace(directory,""),
@@ -130,7 +131,7 @@ def ls(context, long, directory):
             else:
                 row = "{} {: <8} {: >10} {} {: <10}".format(
                     file["perms"],
-                    human_readable_size(file["size"], 1),
+                    human_readable_size(file["size"], 1) if file["type"] == "file" else file["size"],
                     file["date"],
                     bcolors.ENDC,
                     file["name"],

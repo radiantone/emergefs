@@ -85,6 +85,10 @@ class NodeServer(Server):
             logging.info("get: path = %s", path)
             obj = self.fs.root.registry[path]
 
+            if obj["type"] == "directory":
+                obj["size"] = len(obj["dir"])
+            else:
+                obj["size"] = obj["size"]
             file = {
                 "date": obj["date"],
                 "path": obj["path"],
