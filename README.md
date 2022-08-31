@@ -61,7 +61,7 @@ item = InventoryItem(
     data="A widget{} data".format(1),
 )
 
-client = Client("0.0.0.0", "6558")  # Connect to any node
+client = Client("0.0.0.0", "5558")  # Connect to any node
 
 client.store(item)
 ```
@@ -96,4 +96,24 @@ $ emerge remote /inventory/widget total_cost
 ```bash
 $ emerge local /inventory/widget total_cost
 30.0
+```
+
+## Running a Node
+
+```bash
+$ emerge --debug node start --port 5558
+2022-08-31 10:48:34,261 : root DEBUG : Debug ON
+2022-08-31 10:48:34,322 : root INFO : Starting NodeServer on port: 5558
+2022-08-31 10:48:34,322 : root DEBUG : [NodeServer] Setup...
+2022-08-31 10:48:34,322 : root DEBUG : [NodeServer] start...
+2022-08-31 10:48:34,323 : root DEBUG : Subscribed to NODE on tcp://0.0.0.0:5557
+2022-08-31 10:48:34,323 : root DEBUG : get_messages
+2022-08-31 10:48:34,323 : root DEBUG : Waiting on message
+2022-08-31 10:48:34,324 : root INFO : Z0DBFileSystem setup
+2022-08-31 10:48:34,324 : ZODB.BaseStorage DEBUG : create storage emerge.fs
+2022-08-31 10:48:34,324 : txn.139737146840640 DEBUG : new transaction
+2022-08-31 10:48:34,324 : txn.139737146840640 DEBUG : commit
+2022-08-31 10:48:34,325 : root INFO : Z0DBFileSystem start
+2022-08-31 10:48:34,325 : zerorpc.events DEBUG : bound to tcp://0.0.0.0:5558 (status=<SocketContext(bind='tcp://0.0.0.0:5558')>)
+
 ```

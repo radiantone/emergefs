@@ -62,12 +62,13 @@ def node():
 
 
 @node.command(name="start")
+@click.option("-p","--port", default=5558)
 @click.pass_context
-def start(context):
+def start(context, port):
     """Start emerge node server"""
     from emerge.node.server import NodeServer
 
-    node = NodeServer()
+    node = NodeServer(port=port)
     node.setup()
     node.start()
 

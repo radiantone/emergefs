@@ -245,6 +245,10 @@ class NodeServer(Server):
 
             return obj.data
 
+    def __init__(self, port=5558):
+        self.rpcport = port
+        logging.info("Starting NodeServer on port: {}".format(port))
+
     def shutdown(self) -> bool:
         import os
 
