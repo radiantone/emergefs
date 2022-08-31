@@ -45,7 +45,7 @@ from emerge.core.objects import EmergeFile
 
 @dataclass
 class InventoryItem(EmergeFile):
-    
+    """ Create your own classes on-the-fly """
     unit_price: float = 0.0
     quantity_on_hand: int = 0
 
