@@ -1,6 +1,6 @@
 <img src="./img/logo.png" width="200">
 
-Serverless, distributed, computational, object file system
+Serverless, object-oriented, distributed file system
 
 
 > emerge combines the notion of an object persistent store and service API mesh into one design as a distributed filesystem.
