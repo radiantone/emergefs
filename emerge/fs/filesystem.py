@@ -35,19 +35,21 @@ class Z0DBFileSystem(FileSystem):
         db = self.db = ZODB.DB(storage)
         self.connection = db.open()
         self.root = self.connection.root()
+
+        transaction.begin()
+        logging.info("Creating new objects collection")
+
         if not hasattr(self.root, "objects"):
-
-            transaction.begin()
-            logging.info("Creating new objects collection")
             self.root.objects = BTrees.OOBTree.BTree()
+            self.objects = self.root.objects
 
-            registry = BTrees.OOBTree.BTree()
-            self.root.registry = registry
-            self.registry = registry
+            self.registry = self.root.registry = BTrees.OOBTree.BTree()
+
+            self.classes = self.root.classes = BTrees.OOBTree.BTree()
+
+            self.nodes = self.root.nodes = BTrees.OOBTree.BTree()
 
             transaction.commit()
-
-        self.objects = self.root.objects
 
         return True
 

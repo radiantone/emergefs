@@ -1,5 +1,7 @@
 import logging
+import os
 import signal
+import threading
 from typing import List
 
 import BTrees.OOBTree
@@ -8,6 +10,8 @@ import dill
 from emerge.compute import Data
 from emerge.core.objects import Server
 from emerge.fs.filesystem import FileSystemFactory
+
+IS_BROKER = "ISBROKER" in os.environ
 
 
 class NodeServer(Server):
@@ -28,6 +32,7 @@ class NodeServer(Server):
             self.fs = FileSystemFactory.get()
             self.fs.setup()
             self.fs.start()
+            self.fs.registry["/hello"] = {"status":"ok", "message":"hello there"}
 
         def sum(self):
 
@@ -70,16 +75,34 @@ class NodeServer(Server):
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
 
+        def registry(self):
+            import platform
+
+            for name in self.fs.registry:
+                logging.info("NAME OBJ: %s", self.fs.registry[name])
+
+            registry = [self.fs.registry[name] for name in self.fs.registry if "type" in self.fs.registry[name] and self.fs.registry[name]["type"] == "file"]
+
+            return {"registry": registry, "host": platform.node()}
+
         def getobject(self, path, page=0, size=-1):
 
             logging.info("getobject: path = %s", path)
+
             obj = self.fs.root.registry[path]
-            d = dill.loads(obj["obj"])
-            logging.info("OBJ %s", d.name)
+
+            def make_object(classname, data):
+                _class = self.fs.root.classes[classname]
+
+                return _class(**data)
+
+            the_obj = make_object(obj["class"], obj["obj"])
+
             if obj["type"] == "file":
-                return obj["obj"]
+                return dill.dumps(the_obj)
+
             elif obj["type"] == "directory":
-                return [obj[o]["obj"] for o in obj["dir"]]
+                return [dill.dumps(make_object(obj[o]["class"]), obj[o]["obj"]) for o in obj["dir"]]
 
         def get(self, path, page=0, size=-1):
 
@@ -90,6 +113,7 @@ class NodeServer(Server):
                 obj["size"] = len(obj["dir"])
             else:
                 obj["size"] = obj["size"]
+
             file = {
                 "date": obj["date"],
                 "path": obj["path"],
@@ -97,6 +121,7 @@ class NodeServer(Server):
                 "id": obj["id"],
                 "perms": obj["perms"],
                 "type": obj["type"],
+                "class": obj.__class__.__name__,
                 "size": obj["size"],
             }
 
@@ -155,16 +180,27 @@ class NodeServer(Server):
             return dill.dumps(files)
 
         def execute(self, oid, method):
-            _obj = dill.loads(self.fs.registry[oid]["obj"])
-            _method = getattr(_obj, method)
+            def make_object(classname, data):
+                _class = self.fs.root.classes[classname]
+
+                return _class(**data)
+
+            obj = self.fs.registry[oid]
+
+            the_obj = make_object(obj["class"], obj["obj"])
+            #_obj = dill.loads(self.fs.registry[oid]["obj"])
+            _method = getattr(the_obj, method)
             return _method()
 
         def store(self, id, path, name, obj):
             import datetime
             import BTrees.OOBTree
             import dill
+            import json
 
             _obj = dill.loads(obj)
+            logging.info("_OBJ %s %s",_obj.__class__, _obj)
+            self.fs.root.classes[_obj.__class__.__name__] = _obj.__class__
 
             file = {
                 "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
@@ -173,8 +209,9 @@ class NodeServer(Server):
                 "id": _obj.id,
                 "perms": _obj.perms,
                 "type": _obj.type,
+                "class": _obj.__class__.__name__,
                 "size": len(obj),
-                "obj": obj,
+                "obj": json.loads(str(_obj)),
             }
 
             with self.fs.session():
@@ -222,6 +259,9 @@ class NodeServer(Server):
                             logging.info("store: added new dir id %s to current root %s with key %s", dir, root, p)
                             logging.info("store: added dir is %s", root[p])
                             directory = root = dir["dir"]
+
+                            # I created a new directory from a path and need to add it
+                            # to my registry for lookups
                             self.fs.root.registry[_path] = dir
 
                         logging.info("root id is now %s", root)
@@ -248,6 +288,7 @@ class NodeServer(Server):
     def __init__(self, port=5558):
         self.rpcport = port
         logging.info("Starting NodeServer on port: {}".format(port))
+        self.api = self.NodeAPI()
 
     def shutdown(self) -> bool:
         import os
@@ -290,7 +331,7 @@ class NodeServer(Server):
 
         def start_rpc():
             """Listen for RPC events"""
-            s = zerorpc.Server(self.NodeAPI())
+            s = zerorpc.Server(self.api)
             s.bind("tcp://0.0.0.0:{}".format(self.rpcport))
             s.run()
 
@@ -320,15 +361,24 @@ class NodeServer(Server):
                 logging.debug("Waiting on message")
                 string = self.socket.recv_string()
                 logging.debug("Got message %s", string)
+
                 parts = string.split(" ")
+
                 if parts[1] == "HI":
                     client = zerorpc.Client()
                     client.connect(parts[3])
                     client.hello("tcp://{}:{}".format(platform.node(), self.rpcport))
+                    host = parts[3].split(':')[1].rsplit('/')[-1]
 
-        # fs = self.fs = FileSystemFactory.get()
-        # self.services += [fs]
-        import threading
+                    if IS_BROKER and host != platform.node():
+                        # Get registry from parts[3]
+                        node = {
+                            'address': parts[3]
+                        }
+                        self.api.fs.nodes[parts[3]] = node
+
+                        registry = client.registry()
+                        logging.info("REGISTRY[%s] %s", parts[3], registry)
 
         self.process = threading.Thread(target=get_messages)
         self.rpc = threading.Thread(target=start_rpc)

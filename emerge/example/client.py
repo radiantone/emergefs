@@ -51,8 +51,8 @@ class InventoryItem(EmergeFile):
             'name': self.name,
             'path': self.path,
             'id': self.id,
-            'price': self.unit_price,
-            'quantity': self.quantity_on_hand,
+            'unit_price': self.unit_price,
+            'quantity_on_hand': self.quantity_on_hand,
             'perms': self.perms,
             'type': self.type,
             'data': self.data
