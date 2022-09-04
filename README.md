@@ -63,7 +63,18 @@ item = InventoryItem(
 
 client = Client("0.0.0.0", "5558")  # Connect to any node
 
+# Stores item under path /inventory/widget
 client.store(item)
+```
+Execute object methods as-a-service
+> NOTE: Method runs on the host containing the object
+```python
+client.run("/inventory/widget", "total_cost")
+```
+Retrieve object and run methods on it locally
+```python
+widget = client.get("/inventory/widget")
+total_cost = widget.total_cost()
 ```
 ### Browse Filesystem
 Browse the emerge object filesystem from command line:

@@ -11,6 +11,9 @@ services:
     #command: ["/opt/emerge/venv/bin/emerge --debug node start"]
     ports:
       - "6558:5558"
+    environment:
+      ISBROKER: "true"
+
     networks:
       - emerge
     volumes:
