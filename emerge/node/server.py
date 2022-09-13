@@ -10,8 +10,20 @@ import dill
 from emerge.compute import Data
 from emerge.core.objects import Server
 from emerge.fs.filesystem import FileSystemFactory
+from emerge.core.client import Client
 
 IS_BROKER = "ISBROKER" in os.environ
+
+if not IS_BROKER:
+    BROKER = os.environ["BROKER"]
+    broker = Client(BROKER, "5558")
+    logging.info("Connected to BROKER %s:6558", BROKER)
+    logging.info("Contacting broker...")
+    logging.info("broker object %s", broker)
+
+    # Add myself to the brokers node list
+    broker.register({"path": "test"})
+    logging.info("Contacted broker...")
 
 
 class NodeServer(Server):
@@ -32,7 +44,7 @@ class NodeServer(Server):
             self.fs = FileSystemFactory.get()
             self.fs.setup()
             self.fs.start()
-            self.fs.registry["/hello"] = {"status":"ok", "message":"hello there"}
+            self.fs.registry["/hello"] = {"status": "ok", "message": "hello there"}
 
         def sum(self):
 
@@ -45,7 +57,6 @@ class NodeServer(Server):
 
                 if type(object__) is bytes:
                     object__ = dill.loads(object__)
-                    # objects[object_] = object__
                 try:
                     logging.info(
                         "object: %s %s %s",
@@ -81,7 +92,8 @@ class NodeServer(Server):
             for name in self.fs.registry:
                 logging.info("NAME OBJ: %s", self.fs.registry[name])
 
-            registry = [self.fs.registry[name] for name in self.fs.registry if "type" in self.fs.registry[name] and self.fs.registry[name]["type"] == "file"]
+            registry = [self.fs.registry[name] for name in self.fs.registry if
+                        "type" in self.fs.registry[name] and self.fs.registry[name]["type"] == "file"]
 
             return {"registry": registry, "host": platform.node()}
 
@@ -107,25 +119,29 @@ class NodeServer(Server):
         def get(self, path, page=0, size=-1):
 
             logging.info("get: path = %s", path)
-            obj = self.fs.root.registry[path]
 
-            if obj["type"] == "directory":
-                obj["size"] = len(obj["dir"])
+            if path in self.fs.root.registry:
+                obj = self.fs.root.registry[path]
+
+                if obj["type"] == "directory":
+                    obj["size"] = len(obj["dir"])
+                else:
+                    obj["size"] = obj["size"]
+
+                file = {
+                    "date": obj["date"],
+                    "path": obj["path"],
+                    "name": obj["name"],
+                    "id": obj["id"],
+                    "perms": obj["perms"],
+                    "type": obj["type"],
+                    "class": obj.__class__.__name__,
+                    "size": obj["size"],
+                }
+
+                return file
             else:
-                obj["size"] = obj["size"]
-
-            file = {
-                "date": obj["date"],
-                "path": obj["path"],
-                "name": obj["name"],
-                "id": obj["id"],
-                "perms": obj["perms"],
-                "type": obj["type"],
-                "class": obj.__class__.__name__,
-                "size": obj["size"],
-            }
-
-            return file
+                return {"error": True, "message": "Path not found"}
 
         def getdir(self, path, page=0, size=-1):
 
@@ -151,7 +167,7 @@ class NodeServer(Server):
                 paths = path.split("/")[1:]
                 dir = self.fs.objects
                 for p in paths:
-                    logging.info("list: p %s of paths %s",p, paths)
+                    logging.info("list: p %s of paths %s", p, paths)
                     file = dir[p]
                     if file["type"] == "directory":
                         dir = file["dir"]
@@ -188,9 +204,11 @@ class NodeServer(Server):
             obj = self.fs.registry[oid]
 
             the_obj = make_object(obj["class"], obj["obj"])
-            #_obj = dill.loads(self.fs.registry[oid]["obj"])
             _method = getattr(the_obj, method)
             return _method()
+
+        def register(self, entry):
+            logging.info("BROKER:register %s", entry)
 
         def store(self, id, path, name, obj):
             import datetime
@@ -199,7 +217,7 @@ class NodeServer(Server):
             import json
 
             _obj = dill.loads(obj)
-            logging.info("_OBJ %s %s",_obj.__class__, _obj)
+            logging.info("_OBJ %s %s", _obj.__class__, _obj)
             self.fs.root.classes[_obj.__class__.__name__] = _obj.__class__
 
             file = {
@@ -232,7 +250,7 @@ class NodeServer(Server):
                     then set the directory to the last BTree in the path """
                     for p in paths:
                         _path = base + "/" + p
-                        logging.info("store: _path is now %s",_path)
+                        logging.info("store: _path is now %s", _path)
                         if p in root:
                             logging.info("store: p %s found in root %s", p, root)
                             root = directory = root[p]["dir"]
@@ -265,15 +283,32 @@ class NodeServer(Server):
                             self.fs.root.registry[_path] = dir
 
                         logging.info("root id is now %s", root)
+
                 logging.info("Adding file  %s to directory  [%s]", id, directory)
                 directory[id] = file
 
                 if path[-1] != "/" and len(name) > 0:
                     self.fs.root.registry[path + "/" + name] = file
-                    logging.info("Adding to registry %s %s",path + "/" + name, file)
+                    logging.info("Adding to registry %s %s", path + "/" + name, file)
+
+                    if not IS_BROKER:
+                        broker = Client(BROKER, "5558")
+                        logging.info("broker object %s", broker)
+
+                        # Add my object reference to the brokers directory,
+                        # pointing back to me
+                        broker.register({"path": path + "/" + name})
                 else:
                     self.fs.root.registry[path + name] = file
-                    logging.info("Adding to registry %s %s",path + name, file)
+                    logging.info("Adding to registry %s %s", path + name, file)
+
+                    if not IS_BROKER:
+                        broker = Client(BROKER, "5558")
+                        logging.info("broker object %s", broker)
+
+                        # Add my object reference to the brokers directory,
+                        # pointing back to me
+                        broker.register({"path": path + name})
 
             logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
             assert self.fs.objects == self.fs.root.objects

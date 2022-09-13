@@ -2,6 +2,7 @@ import dill
 import zerorpc
 import logging
 
+
 class Client:
     def __init__(self, host, port):
         self.client = zerorpc.Client()
@@ -17,6 +18,10 @@ class Client:
         file = self.client.getobject(path, offset=offset, size=size)
         _file = dill.loads(file)
         return _file
+
+    def register(self, entry):
+        logging.info("register entry %s", entry)
+        self.client.register(entry)
 
     def get(self, oid, offset=0, size=0):
         file = self.client.get(oid, offset=offset, size=size)

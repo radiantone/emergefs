@@ -7,10 +7,10 @@ from zerorpc.exceptions import RemoteError
 logging.basicConfig(
     level=logging.INFO,
     format="%(filename)s: "
-    "%(levelname)s: "
-    "%(funcName)s(): "
-    "%(lineno)d:\t"
-    "%(message)s",
+           "%(levelname)s: "
+           "%(funcName)s(): "
+           "%(lineno)d:\t"
+           "%(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ def node():
 
 
 @node.command(name="start")
-@click.option("-p","--port", default=5558)
+@click.option("-p", "--port", default=5558)
 @click.pass_context
 def start(context, port):
     """Start emerge node server"""
