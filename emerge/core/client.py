@@ -1,6 +1,7 @@
+import logging
+
 import dill
 import zerorpc
-import logging
 
 
 class Client:

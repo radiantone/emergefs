@@ -8,9 +8,9 @@ import BTrees.OOBTree
 import dill
 
 from emerge.compute import Data
+from emerge.core.client import Client
 from emerge.core.objects import Server
 from emerge.fs.filesystem import FileSystemFactory
-from emerge.core.client import Client
 
 IS_BROKER = "ISBROKER" in os.environ
 
@@ -81,6 +81,7 @@ class NodeServer(Server):
                 print("SUM:", sum_a)
             except:
                 import traceback
+
                 print(traceback.format_exc())
 
         def hello(self, address):
@@ -92,8 +93,12 @@ class NodeServer(Server):
             for name in self.fs.registry:
                 logging.info("NAME OBJ: %s", self.fs.registry[name])
 
-            registry = [self.fs.registry[name] for name in self.fs.registry if
-                        "type" in self.fs.registry[name] and self.fs.registry[name]["type"] == "file"]
+            registry = [
+                self.fs.registry[name]
+                for name in self.fs.registry
+                if "type" in self.fs.registry[name]
+                and self.fs.registry[name]["type"] == "file"
+            ]
 
             return {"registry": registry, "host": platform.node()}
 
@@ -114,7 +119,10 @@ class NodeServer(Server):
                 return dill.dumps(the_obj)
 
             elif obj["type"] == "directory":
-                return [dill.dumps(make_object(obj[o]["class"]), obj[o]["obj"]) for o in obj["dir"]]
+                return [
+                    dill.dumps(make_object(obj[o]["class"]), obj[o]["obj"])
+                    for o in obj["dir"]
+                ]
 
         def get(self, path, page=0, size=-1):
 
@@ -212,9 +220,10 @@ class NodeServer(Server):
 
         def store(self, id, path, name, obj):
             import datetime
+            import json
+
             import BTrees.OOBTree
             import dill
-            import json
 
             _obj = dill.loads(obj)
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
@@ -234,19 +243,19 @@ class NodeServer(Server):
 
             with self.fs.session():
 
-                """ If the path is already created, set the directory to that path """
+                """If the path is already created, set the directory to that path"""
                 if path in self.fs.root.objects:
                     directory = self.fs.root.objects[path]
                     logging.info("Found %s in self.fs.root.objects", path)
                 else:
-                    """ Create all the BTree objects for each section in the path """
+                    """Create all the BTree objects for each section in the path"""
                     paths = path.split("/")[1:]
                     base = ""
                     root = _root = self.fs.root.objects
                     logging.info("store: paths: %s", paths)
                     logging.info("root id %s", root)
 
-                    """ Create BTree directories for each subpath if it doesn't exist 
+                    """ Create BTree directories for each subpath if it doesn't exist
                     then set the directory to the last BTree in the path """
                     for p in paths:
                         _path = base + "/" + p
@@ -269,12 +278,17 @@ class NodeServer(Server):
                                 "perms": "rwxrwxrwx",
                                 "type": "directory",
                                 "size": 0,
-                                "dir": BTrees.OOBTree.BTree()
+                                "dir": BTrees.OOBTree.BTree(),
                             }
 
                             logging.info("store: new dir id is %s", dir["dir"])
                             root[p] = dir
-                            logging.info("store: added new dir id %s to current root %s with key %s", dir, root, p)
+                            logging.info(
+                                "store: added new dir id %s to current root %s with key %s",
+                                dir,
+                                root,
+                                p,
+                            )
                             logging.info("store: added dir is %s", root[p])
                             directory = root = dir["dir"]
 
@@ -403,13 +417,11 @@ class NodeServer(Server):
                     client = zerorpc.Client()
                     client.connect(parts[3])
                     client.hello("tcp://{}:{}".format(platform.node(), self.rpcport))
-                    host = parts[3].split(':')[1].rsplit('/')[-1]
+                    host = parts[3].split(":")[1].rsplit("/")[-1]
 
                     if IS_BROKER and host != platform.node():
                         # Get registry from parts[3]
-                        node = {
-                            'address': parts[3]
-                        }
+                        node = {"address": parts[3]}
                         self.api.fs.nodes[parts[3]] = node
 
                         registry = client.registry()

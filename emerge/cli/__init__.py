@@ -7,10 +7,10 @@ from zerorpc.exceptions import RemoteError
 logging.basicConfig(
     level=logging.INFO,
     format="%(filename)s: "
-           "%(levelname)s: "
-           "%(funcName)s(): "
-           "%(lineno)d:\t"
-           "%(message)s",
+    "%(levelname)s: "
+    "%(funcName)s(): "
+    "%(lineno)d:\t"
+    "%(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -114,7 +114,9 @@ def ls(context, long, directory):
             logging.debug("client.get({}) = {}".format(fname, file))
             row = "{} {: <8} {: >10} {} {} {}".format(
                 file["perms"],
-                human_readable_size(file["size"], 1) if file["type"] == "file" else file["size"],
+                human_readable_size(file["size"], 1)
+                if file["type"] == "file"
+                else file["size"],
                 file["date"],
                 bcolors.OKBLUE,
                 fname.replace(directory, ""),
@@ -132,7 +134,9 @@ def ls(context, long, directory):
             else:
                 row = "{} {: <8} {: >10} {} {: <10}".format(
                     file["perms"],
-                    human_readable_size(file["size"], 1) if file["type"] == "file" else file["size"],
+                    human_readable_size(file["size"], 1)
+                    if file["type"] == "file"
+                    else file["size"],
                     file["date"],
                     bcolors.ENDC,
                     file["name"],
@@ -149,8 +153,6 @@ def ls(context, long, directory):
 @click.pass_context
 def cat(context, path):
     """Display contents of a file"""
-    import dataclasses
-
     client = context.obj["client"]
 
     file = client.getobject(path)

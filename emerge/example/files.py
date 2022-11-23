@@ -2,7 +2,7 @@ from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
 
 """ Connect to specific Node """
-client = Client("localhost", "6559")
+client = Client("localhost", "6558")
 """ Store a custom instance there """
 obj = EmergeFile(id="file123", name="file 123", path="/files")
 obj.data = "this is myclass of data"

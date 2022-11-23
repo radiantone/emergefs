@@ -1,9 +1,9 @@
 import dataclasses
 import json
+from dataclasses import dataclass
 from typing import Any
 
 from persistent import Persistent
-from dataclasses import dataclass
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -20,5 +20,5 @@ class EmergeData(Persistent):
     data: Any
 
     def __str__(self):
-        #return json.dumps(self, indent=4, cls=EnhancedJSONEncoder)
+        # return json.dumps(self, indent=4, cls=EnhancedJSONEncoder)
         return json.dumps(dataclasses.asdict(self))

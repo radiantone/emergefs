@@ -26,6 +26,7 @@ class Server(metaclass=ABCMeta):
 @dataclass
 class EmergeObject(EmergeData):
     """Class for keeping track of an item in inventory."""
+
     pass
 
 
