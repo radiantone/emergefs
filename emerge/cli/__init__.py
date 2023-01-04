@@ -148,10 +148,10 @@ def ls(context, long, directory):
                     print(file["name"].replace(directory, ""))
 
 
-@cli.command()
+@cli.command(name="help")
 @click.argument("path")
 @click.pass_context
-def help(context, path):
+def cmd_help(context, path):
     """Display details of an objects class"""
     client = context.obj["client"]
 
