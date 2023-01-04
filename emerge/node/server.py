@@ -17,7 +17,7 @@ IS_BROKER = "ISBROKER" in os.environ
 if not IS_BROKER:
     BROKER = os.environ["BROKER"]
     broker = Client(BROKER, "5558")
-    logging.info("Connected to BROKER %s:6558", BROKER)
+    logging.info("Connected to BROKER %s:5558", BROKER)
     logging.info("Contacting broker...")
     logging.info("broker object %s", broker)
 
