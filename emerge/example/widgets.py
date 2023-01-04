@@ -1,5 +1,4 @@
 import random
-
 from dataclasses import dataclass
 
 from emerge.core.client import Client
@@ -65,4 +64,3 @@ for i in range(2, 10):
     )
     print(item)
     client.store(item)
-

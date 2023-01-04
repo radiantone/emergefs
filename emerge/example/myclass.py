@@ -16,7 +16,13 @@ class MyClass(EmergeFile):
 client = Client("0.0.0.0", "6558")
 
 """ Store a custom instance there """
-obj = MyClass(id="myclass", name="myclass", path="/classes", perms="rxwrxwr--", data="one two three four")
+obj = MyClass(
+    id="myclass",
+    name="myclass",
+    path="/classes",
+    perms="rxwrxwr--",
+    data="one two three four",
+)
 obj.text = "this is myclass of data"
 
 """ Store an object on a specific node """
@@ -34,4 +40,3 @@ print()
 """ Run the object as a service on the remote node """
 print("Executing run on server")
 print(client.run("/classes/myclass", "run"))
-

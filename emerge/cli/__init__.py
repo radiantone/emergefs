@@ -169,11 +169,15 @@ def methods(context, path):
     client = context.obj["client"]
 
     file = client.getobject(path)
-    method_list = [attribute for attribute in dir(type(file)) if
-                   callable(getattr(type(file), attribute)) and attribute.startswith('_') is False]
+    method_list = [
+        attribute
+        for attribute in dir(type(file))
+        if callable(getattr(type(file), attribute))
+        and attribute.startswith("_") is False
+    ]
 
     for method in method_list:
-        print(method,signature(getattr(file, method)))
+        print(method, signature(getattr(file, method)))
 
 
 @cli.command()
