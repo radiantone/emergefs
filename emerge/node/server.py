@@ -102,6 +102,15 @@ class NodeServer(Server):
 
             return {"registry": registry, "host": platform.node()}
 
+        def query(self, path, page=0, size=-1):
+            obj = self.getobject(path)
+
+            if hasattr(obj, 'query'):
+                # Object implements query method and receives the database reference
+                # From there, the query method can scan the database and build a list of
+                # results
+                return obj.query(self.fs.objects)
+
         def getobject(self, path, page=0, size=-1):
 
             logging.info("getobject: path = %s", path)

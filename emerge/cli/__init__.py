@@ -148,6 +148,18 @@ def ls(context, long, directory):
                     print(file["name"].replace(directory, ""))
 
 
+@cli.command(name="query")
+@click.argument("path")
+@click.pass_context
+def cmd_query(context, path):
+    """Execute query method of an object"""
+    client = context.obj["client"]
+
+    results = client.query(path)
+    for result in results:
+        print(result)
+
+
 @cli.command(name="help")
 @click.argument("path")
 @click.pass_context
