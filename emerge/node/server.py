@@ -103,26 +103,32 @@ class NodeServer(Server):
             return {"registry": registry, "host": platform.node()}
 
         def query(self, path, page=0, size=-1):
-            obj = self.getobject(path)
-
+            obj = self.getobject(path, True)
+            logging.info("query: obj %s %s", obj, type(obj))
+            logging.info("fs.objects %s", self.fs.root.objects)
             if hasattr(obj, 'query'):
                 # Object implements query method and receives the database reference
                 # From there, the query method can scan the database and build a list of
                 # results
-                return obj.query(self.fs.objects)
+                logging.info("CALLING QUERY ON %s", obj)
+                return obj.query(self)
 
-        def getobject(self, path, page=0, size=-1):
+        def getobject(self, path, nodill, page=0, size=-1):
 
             logging.info("getobject: path = %s", path)
 
             obj = self.fs.root.registry[path]
+            logging.info("getobject: object %s", obj)
 
             def make_object(classname, data):
                 _class = self.fs.root.classes[classname]
 
                 return _class(**data)
 
+            logging.info("make_object %s %s", obj["class"], obj["obj"])
             the_obj = make_object(obj["class"], obj["obj"])
+            if nodill:
+                return the_obj
 
             if obj["type"] == "file":
                 return dill.dumps(the_obj)
@@ -175,7 +181,7 @@ class NodeServer(Server):
                 # _obj = dill.loads(obj)
                 return obj
 
-        def list(self, path, offset=0, size=0):
+        def list(self, path, nodill, offset=0, size=0):
             logging.info("list: path %s", path)
             logging.info("root id is %s", self.fs.root.objects)
 
@@ -189,7 +195,10 @@ class NodeServer(Server):
                     if file["type"] == "directory":
                         dir = file["dir"]
                     elif file["type"] == "file":
-                        return dill.dumps(file)
+                        if not nodill:
+                            return dill.dumps(file)
+                        else:
+                            return file
                 obj = dir
                 logging.info("found %s in %s %s", path, dir, len(obj))
             else:
@@ -210,7 +219,11 @@ class NodeServer(Server):
                     files += [file["path"]]
 
             logging.info("RETURNING FILES: %s", files)
-            return dill.dumps(files)
+            logging.info("usedill %s", nodill)
+            if not nodill:
+                return dill.dumps(files)
+            else:
+                return files
 
         def execute(self, oid, method):
             def make_object(classname, data):
@@ -250,6 +263,7 @@ class NodeServer(Server):
                 "obj": json.loads(str(_obj)),
             }
 
+            logging.info("STORE: %s", file)
             with self.fs.session():
 
                 """If the path is already created, set the directory to that path"""

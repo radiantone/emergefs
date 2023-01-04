@@ -20,6 +20,9 @@ class Client:
         _file = dill.loads(file)
         return _file
 
+    def query(self, path):
+        return self.client.query(path)
+
     def register(self, entry):
         logging.info("register entry %s", entry)
         self.client.register(entry)
