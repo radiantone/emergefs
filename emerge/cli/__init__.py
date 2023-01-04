@@ -151,8 +151,36 @@ def ls(context, long, directory):
 @cli.command()
 @click.argument("path")
 @click.pass_context
+def help(context, path):
+    """Display details of an objects class"""
+    client = context.obj["client"]
+
+    file = client.getobject(path)
+    print(help(file))
+
+
+@cli.command()
+@click.argument("path")
+@click.pass_context
+def methods(context, path):
+    """Display available methods for an object"""
+    from inspect import signature
+
+    client = context.obj["client"]
+
+    file = client.getobject(path)
+    method_list = [attribute for attribute in dir(type(file)) if
+                   callable(getattr(type(file), attribute)) and attribute.startswith('_') is False]
+
+    for method in method_list:
+        print(method,signature(getattr(file, method)))
+
+
+@cli.command()
+@click.argument("path")
+@click.pass_context
 def cat(context, path):
-    """Display contents of a file"""
+    """Display contents of an object"""
     client = context.obj["client"]
 
     file = client.getobject(path)
