@@ -60,6 +60,7 @@ class EmergeFile(EmergeObject):
             }
         )
 
+
 class FileSystem(Server):
     """A persistent filesystem"""
 
