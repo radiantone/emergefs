@@ -167,7 +167,7 @@ def cmd_help(context, path):
     """Display details of an objects class"""
     client = context.obj["client"]
 
-    file = client.getobject(path)
+    file = client.getobject(path, False)
     print(help(file))
 
 
@@ -180,7 +180,7 @@ def methods(context, path):
 
     client = context.obj["client"]
 
-    file = client.getobject(path)
+    file = client.getobject(path, False)
     method_list = [
         attribute
         for attribute in dir(type(file))
@@ -223,6 +223,6 @@ def local(context, path, function):
     """Run an object function"""
     client = context.obj["client"]
 
-    obj = client.getobject(path)
+    obj = client.getobject(path, False)
     method = getattr(obj, function)
     print(method())
