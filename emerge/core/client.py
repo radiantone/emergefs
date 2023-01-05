@@ -15,8 +15,8 @@ class Client:
     def list(self, path, offset=0, size=0):
         return dill.loads(self.client.list(path, offset, size))
 
-    def getobject(self, path, offset=0, size=0):
-        file = self.client.getobject(path, offset=offset, size=size)
+    def getobject(self, path, nodill, offset=0, size=0):
+        file = self.client.getobject(path, nodill, offset=offset, size=size)
         _file = dill.loads(file)
         return _file
 

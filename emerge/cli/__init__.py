@@ -199,7 +199,7 @@ def cat(context, path):
     """Display contents of an object"""
     client = context.obj["client"]
 
-    file = client.getobject(path)
+    file = client.getobject(path, False)
     print(file)
 
 

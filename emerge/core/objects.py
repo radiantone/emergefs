@@ -46,6 +46,19 @@ class EmergeFile(EmergeObject):
     type: str = "file"
     data: str = ""
 
+    def __str__(self):
+        import json
+
+        return json.dumps(
+            {
+                "name": self.name,
+                "path": self.path,
+                "id": self.id,
+                "perms": self.perms,
+                "type": self.type,
+                "data": self.data,
+            }
+        )
 
 class FileSystem(Server):
     """A persistent filesystem"""

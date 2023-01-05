@@ -7,36 +7,26 @@ from emerge.core.objects import EmergeFile
 
 @dataclass
 class QueryFile(EmergeFile):
+    import persistent.list
+    results = persistent.list.PersistentList()
 
-    def query(self, server):
+    def query(self, fs):
         import logging
         import json
 
         results = []
 
-        objs = server.list("/inventory", True)
-        logging.info("RESULTS %s", results)
+        objs = fs.list("/inventory", True)
         for oid in objs:
-            obj = server.getobject(oid, True)
-            logging.info("OBJ %s", obj)
+            obj = fs.getobject(oid, True)
+            logging.info("OBJ %s %s", type(obj), obj)
             if hasattr(obj, 'unit_price') and obj.unit_price < 15:
                 results += [json.loads(str(obj))]
+                self.results.append(obj)
 
+        logging.info("RESULTS %s", results)
+        logging.info("self.RESULTS %s", self.results)
         return results
-
-    def __str__(self):
-        import json
-
-        return json.dumps(
-            {
-                "name": self.name,
-                "path": self.path,
-                "id": self.id,
-                "perms": self.perms,
-                "type": self.type,
-                "data": self.data,
-            }
-        )
 
 
 query = QueryFile(
@@ -46,9 +36,6 @@ query = QueryFile(
 
 client = Client("0.0.0.0", "6558")
 client.store(query)
-
-files = client.list("/queries", offset=0, size=0)
-print(files)
 
 results = client.query("/queries/query1")
 print(results)
