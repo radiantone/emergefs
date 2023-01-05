@@ -29,7 +29,7 @@ obj.text = "this is myclass of data"
 client.store(obj)
 
 """ Ask for it back """
-obj = client.getobject("/classes/myclass")
+obj = client.getobject("/classes/myclass", False)
 
 """ Execute a method locally on this host """
 print("Getting data and word count")

@@ -55,7 +55,7 @@ clean:
 
 .PHONY: tests
 tests: format lint
-	pytest
+	pytest emerge/tests
 	
 .PHONY: all
 all: format lint update docs install tests clean

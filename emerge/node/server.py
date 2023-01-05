@@ -106,7 +106,7 @@ class NodeServer(Server):
             obj = self.getobject(path, True)
             logging.info("query: obj %s %s", obj, type(obj))
             logging.info("fs.objects %s", self.fs.root.objects)
-            if hasattr(obj, 'query'):
+            if hasattr(obj, "query"):
                 # Object implements query method and receives the database reference
                 # From there, the query method can scan the database and build a list of
                 # results
@@ -191,14 +191,20 @@ class NodeServer(Server):
                 dir = self.fs.objects
                 for p in paths:
                     logging.info("list: p %s of paths %s", p, paths)
-                    file = dir[p]
-                    if file["type"] == "directory":
-                        dir = file["dir"]
-                    elif file["type"] == "file":
-                        if not nodill:
-                            return dill.dumps(file)
-                        else:
-                            return file
+                    try:
+                        file = dir[p]
+                        if file["type"] == "directory":
+                            dir = file["dir"]
+                        elif file["type"] == "file":
+                            if not nodill:
+                                return dill.dumps(file)
+                            else:
+                                return file
+                    except KeyError:
+                        raise Exception("Path {} not found".format(path))
+
+                if dir == self.fs.objects:
+                    raise Exception("Path {} not found".format(path))
                 obj = dir
                 logging.info("found %s in %s %s", path, dir, len(obj))
             else:

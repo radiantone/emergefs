@@ -95,8 +95,8 @@ def ls(context, long, directory):
 
     try:
         files = client.list(directory, offset=0, size=0)
-    except RemoteError:
-        click.echo("Object {} not found.".format(directory))
+    except RemoteError as ex:
+        click.echo(ex.msg)
         return
 
     logging.debug("FILES:%s", files)
