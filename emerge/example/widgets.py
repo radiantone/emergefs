@@ -16,6 +16,9 @@ class InventoryItem(EmergeFile):
         return "total cost:{}".format(self.total_cost())
 
     def total_cost(self) -> float:
+        import logging
+
+        logging.debug("InventoryItem: total_cost executing")
         return self.unit_price * self.quantity_on_hand
 
     def __str__(self):
