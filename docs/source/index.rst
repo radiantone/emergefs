@@ -10,7 +10,7 @@ Welcome to PCB's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. click:: pcb.cli:cli
+.. click:: emerge.cli:cli
    :prog: PCB
    :nested: full
 
