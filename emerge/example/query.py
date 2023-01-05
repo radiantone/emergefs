@@ -11,17 +11,15 @@ class QueryFile(EmergeFile):
     results = persistent.list.PersistentList()
 
     def query(self, fs):
+        """This only runs on the server and receives the filesystem object to traverse"""
         import json
-        import logging
 
         objs = fs.list("/inventory", True)
         for oid in objs:
             obj = fs.getobject(oid, True)
-            logging.info("OBJ %s %s", type(obj), obj)
-            if hasattr(obj, "unit_price") and obj.unit_price < 15:
+            if obj.unit_price < 15:
                 self.results.append(obj)
 
-        logging.info("self.RESULTS %s", self.results)
         return json.dumps([json.loads(str(result)) for result in self.results])
 
 

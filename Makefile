@@ -18,7 +18,7 @@ format:
 	$(black)
 
 .PHONY: lint
-lint: setup-install
+lint:
 	mypy --show-error-codes  --ignore-missing-imports emerge
 	flake8 --ignore=E203,F841,E501,E722,W503  emerge
 	$(isort) --check-only --df
