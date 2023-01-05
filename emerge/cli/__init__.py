@@ -74,7 +74,7 @@ def start(context, port):
 
 
 @cli.command()
-@click.option("-l", "long", is_flag=True)
+@click.option("-l", "--long", is_flag=True)
 @click.argument("directory", default="/")
 @click.pass_context
 def ls(context, long, directory):
@@ -206,23 +206,16 @@ def cat(context, path):
 @cli.command()
 @click.argument("path")
 @click.argument("function")
+@click.option("-l", "--local", is_flag=True)
 @click.pass_context
-def remote(context, path, function):
-    """Run an object function"""
+def call(context, path, function, local):
+    """Call an object method"""
     client = context.obj["client"]
 
-    result = client.run(path, function)
-    print(result)
-
-
-@cli.command()
-@click.argument("path")
-@click.argument("function")
-@click.pass_context
-def local(context, path, function):
-    """Run an object function"""
-    client = context.obj["client"]
-
-    obj = client.getobject(path, False)
-    method = getattr(obj, function)
-    print(method())
+    if local:
+        obj = client.getobject(path, False)
+        method = getattr(obj, function)
+        print(method())
+    else:
+        result = client.run(path, function)
+        print(result)
