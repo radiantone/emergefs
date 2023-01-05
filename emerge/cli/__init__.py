@@ -74,6 +74,27 @@ def start(context, port):
 
 
 @cli.command()
+@click.pass_context
+def rm(context, long, directory):
+    """Remove object command"""
+    pass
+
+
+@cli.command()
+@click.pass_context
+def mkdir(context, long, directory):
+    """Make directory command"""
+    pass
+
+
+@cli.command()
+@click.pass_context
+def cp(context, long, directory):
+    """Copy object command"""
+    pass
+
+
+@cli.command()
 @click.option("-l", "--long", is_flag=True)
 @click.argument("directory", default="/")
 @click.pass_context
@@ -156,8 +177,7 @@ def cmd_query(context, path):
     client = context.obj["client"]
 
     results = client.query(path)
-    for result in results:
-        print(result)
+    print(results)
 
 
 @cli.command(name="help")

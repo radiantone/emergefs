@@ -13,9 +13,6 @@ class QueryFile(EmergeFile):
     def query(self, fs):
         """This only runs on the server and receives the filesystem object to traverse"""
         import json
-        import logging
-
-        logging.info("QueryFile: query executing")
 
         objs = fs.list("/inventory", True)
         for oid in objs:
