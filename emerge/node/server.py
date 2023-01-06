@@ -157,6 +157,7 @@ class NodeServer(Server):
                     "name": obj["name"],
                     "id": obj["id"],
                     "perms": obj["perms"],
+                    "source": obj["source"],
                     "type": obj["type"],
                     "class": obj.__class__.__name__,
                     "size": obj["size"],
@@ -205,8 +206,8 @@ class NodeServer(Server):
             try:
                 paths = path.split("/")[1:]
                 logging.info("rm: path is %s", path)
-                #file = self.fs.root.registry[path]
-                #del self.fs.root.registry[path]
+                # file = self.fs.root.registry[path]
+                # del self.fs.root.registry[path]
                 dir = self.fs.objects
                 for p in paths:
                     logging.info("rm: p %s of paths %s", p, paths)
@@ -221,12 +222,12 @@ class NodeServer(Server):
                     except KeyError:
                         raise Exception("Path {} not found".format(path))
 
+                if file["type"] == "directory" and len(file["dir"]) > 0:
+                    raise Exception("Directory {} not empty".format(path))
+
                 if dir != self.fs.objects:
                     logging.info("dir %s", file)
                     del file["parent"][p]
-
-                if file["type"] == "directory" and len(file["dir"]) > 0:
-                    raise Exception("Directory {} not empty".format(path))
 
             except KeyError:
                 raise Exception("Path {} not found".format(path))
@@ -306,7 +307,7 @@ class NodeServer(Server):
         def register(self, entry):
             logging.info("BROKER:register %s", entry)
 
-        def store(self, id, path, name, obj):
+        def store(self, id, path, name, source, obj):
             import datetime
             import json
 
@@ -323,6 +324,7 @@ class NodeServer(Server):
                 "name": _obj.name,
                 "id": _obj.id,
                 "perms": _obj.perms,
+                "source": source,
                 "type": _obj.type,
                 "class": _obj.__class__.__name__,
                 "size": len(obj),

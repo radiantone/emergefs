@@ -51,6 +51,7 @@ item = InventoryItem(
 client.store(item)
 print(item)
 
+
 print(client.run("/inventory/widget1", "total_cost"))
 
 

@@ -139,8 +139,8 @@ def ls(context, long, directory):
             logging.debug("Getting fname {}".format(fname))
 
             file = client.get(fname)
-            if 'error' in file:
-                click.echo(file['message'])
+            if "error" in file:
+                click.echo(file["message"])
                 return
 
             logging.debug("client.get({}) = {}".format(fname, file))
@@ -228,10 +228,23 @@ def methods(context, path):
 @click.pass_context
 def cat(context, path):
     """Display contents of an object"""
+
     client = context.obj["client"]
 
     file = client.getobject(path, False)
     print(file)
+
+
+@cli.command()
+@click.argument("path")
+@click.pass_context
+def code(context, path):
+    """List source code of an object"""
+
+    client = context.obj["client"]
+
+    file = client.get(path)
+    print(file["source"])
 
 
 @cli.command()

@@ -10,7 +10,10 @@ class Client:
         self.client.connect("tcp://{}:{}".format(host, port))
 
     def store(self, obj):
-        self.client.store(obj.id, obj.path, obj.name, dill.dumps(obj))
+        import inspect
+
+        _source = inspect.getsource(type(obj))
+        self.client.store(obj.id, obj.path, obj.name, _source, dill.dumps(obj))
 
     def list(self, path, offset=0, size=0):
         return dill.loads(self.client.list(path, offset, size))
@@ -22,7 +25,7 @@ class Client:
 
     def rm(self, path):
         self.client.rm(path)
-        print(path+" removed.")
+        print(path + " removed.")
 
     def query(self, path):
         return self.client.query(path)
