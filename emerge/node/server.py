@@ -181,6 +181,45 @@ class NodeServer(Server):
                 # _obj = dill.loads(obj)
                 return obj
 
+        def mkdir(self, path):
+            try:
+                self.fs.objects[path]
+                raise Exception("Path {} already exists".format(path))
+            except KeyError:
+                import datetime
+
+                dir = {
+                    "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
+                    "path": path,
+                    "name": path,
+                    "id": path,
+                    "perms": "rwxrwxrwx",
+                    "type": "directory",
+                    "size": 0,
+                    "dir": BTrees.OOBTree.BTree(),
+                }
+
+                self.fs.objects[path] = dir
+
+        def rm(self, path):
+            try:
+                file = self.fs.objects[path]
+                if file["type"] == "directory" and len(file["dir"]) > 0:
+                    raise Exception("Directory {} not empty".format(path))
+                del self.fs.objects[path]
+            except KeyError:
+                raise Exception("Path {} not found".format(path))
+
+        def cp(self, source, dest):
+            try:
+                _source = self.fs.objects[source]
+            except KeyError:
+                raise Exception("Path {} not found".format(source))
+
+            file = dill.dumps(_source)
+
+            self.fs.objects[dest] = dill.loads(file)
+
         def list(self, path, nodill, offset=0, size=0):
             logging.info("list: path %s", path)
             logging.info("root id is %s", self.fs.root.objects)
