@@ -203,10 +203,31 @@ class NodeServer(Server):
 
         def rm(self, path):
             try:
-                file = self.fs.objects[path]
+                paths = path.split("/")[1:]
+                logging.info("rm: path is %s", path)
+                #file = self.fs.root.registry[path]
+                #del self.fs.root.registry[path]
+                dir = self.fs.objects
+                for p in paths:
+                    logging.info("rm: p %s of paths %s", p, paths)
+                    try:
+                        file = dir[p]
+                        if file["type"] == "directory":
+                            dir = file["dir"]
+                        elif file["type"] == "file":
+                            logging.info("rm: removing %s", file)
+                            del dir[p]
+                            return
+                    except KeyError:
+                        raise Exception("Path {} not found".format(path))
+
+                if dir != self.fs.objects:
+                    logging.info("dir %s", file)
+                    del file["parent"][p]
+
                 if file["type"] == "directory" and len(file["dir"]) > 0:
                     raise Exception("Directory {} not empty".format(path))
-                del self.fs.objects[path]
+
             except KeyError:
                 raise Exception("Path {} not found".format(path))
 
@@ -344,6 +365,7 @@ class NodeServer(Server):
                                 "name": _path,
                                 "id": _path,
                                 "perms": "rwxrwxrwx",
+                                "parent": root,
                                 "type": "directory",
                                 "size": 0,
                                 "dir": BTrees.OOBTree.BTree(),

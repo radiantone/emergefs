@@ -20,6 +20,10 @@ class Client:
         _file = dill.loads(file)
         return _file
 
+    def rm(self, path):
+        self.client.rm(path)
+        print(path+" removed.")
+
     def query(self, path):
         return self.client.query(path)
 

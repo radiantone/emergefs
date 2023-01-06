@@ -42,7 +42,7 @@ client = Client("0.0.0.0", "6558")
 
 item = InventoryItem(
     id="widget1",
-    name="widget",
+    name="widget1",
     path="/inventory",
     unit_price=3.0,
     quantity_on_hand=10,
@@ -51,12 +51,12 @@ item = InventoryItem(
 client.store(item)
 print(item)
 
-print(client.run("/inventory/widget", "total_cost"))
+print(client.run("/inventory/widget1", "total_cost"))
 
 
 for i in range(2, 10):
     item = InventoryItem(
-        id="widget:" + str(i),
+        id="widget" + str(i),
         name="widget" + str(i),
         perms="rwxrwxrwx",
         type="file",

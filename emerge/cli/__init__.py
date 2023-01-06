@@ -74,10 +74,17 @@ def start(context, port):
 
 
 @cli.command()
+@click.argument("path")
 @click.pass_context
-def rm(context, long, directory):
+def rm(context, path):
     """Remove object command"""
-    pass
+
+    client = context.obj["client"]
+
+    try:
+        client.rm(path)
+    except Exception as ex:
+        print(ex.msg)
 
 
 @cli.command()
@@ -132,6 +139,10 @@ def ls(context, long, directory):
             logging.debug("Getting fname {}".format(fname))
 
             file = client.get(fname)
+            if 'error' in file:
+                click.echo(file['message'])
+                return
+
             logging.debug("client.get({}) = {}".format(fname, file))
             row = "{} {: <8} {: >10} {} {} {}".format(
                 file["perms"],
