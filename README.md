@@ -3,7 +3,7 @@
 *Serverless, object-oriented, computational file system for python*
 
 
-> emerge combines the notion of an object persistent store and service API mesh into one design as a distributed filesystem.
+> emerge combines the notion of an object persistent store and service API mesh into one design as a distributed filesystem with computational features.
 
 
 Whereas with current REST/API type architectural patterns, you would do the following:
