@@ -298,11 +298,24 @@ class NodeServer(Server):
 
                 return _class(**data)
 
-            obj = self.fs.registry[oid]
+            try:
+                obj = self.fs.registry[oid]
 
-            the_obj = make_object(obj["class"], obj["obj"])
-            _method = getattr(the_obj, method)
-            return _method()
+                if obj["type"] == "directory":
+                    results = []
+                    for name in obj["dir"]:
+                        child = self.fs.registry[obj["path"] + "/" + name]
+                        logging.info("%s", child)
+                        the_obj = make_object(child["class"], child["obj"])
+                        _method = getattr(the_obj, method)
+                        results += [_method()]
+                    return results
+                else:
+                    the_obj = make_object(obj["class"], obj["obj"])
+                    _method = getattr(the_obj, method)
+                    return _method()
+            except KeyError:
+                return "No such object {}".format(oid)
 
         def register(self, entry):
             logging.info("BROKER:register %s", entry)
