@@ -115,6 +115,7 @@ def cp(context):
 @click.option("-p", "--port", default="5558", help="Listen port for server")
 @click.pass_context
 def init(context, host, port):
+    """Initialize or update the emerge.ini file"""
     config = configparser.ConfigParser()
 
     with open("emerge.ini", "w") as fp:
