@@ -157,7 +157,7 @@ class NodeServer(Server):
                     "name": obj["name"],
                     "id": obj["id"],
                     "perms": obj["perms"],
-                    "source": obj["source"],
+                    "source": obj["source"] if "source" in obj else "",
                     "type": obj["type"],
                     "class": obj.__class__.__name__,
                     "size": obj["size"],
