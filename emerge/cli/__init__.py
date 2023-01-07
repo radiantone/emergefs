@@ -1,4 +1,6 @@
+import configparser
 import logging
+import os
 import sys
 
 import click
@@ -45,9 +47,16 @@ def cli(context, debug):
     from emerge.core.client import Client
 
     """ Connect to specific Node """
-    client = Client("0.0.0.0", "5558")
 
     context.obj = {}
+
+    if os.path.exists("emerge.ini"):
+        config = configparser.ConfigParser()
+        context.obj["config"] = config.read("emerge.ini")
+        client = Client(config.get("emerge", "host"), config.get("emerge", "port"))
+    else:
+
+        client = Client("0.0.0.0", "5558")
 
     context.obj["client"] = client
     logging.debug("Debug ON")
@@ -62,7 +71,7 @@ def node():
 
 
 @node.command(name="start")
-@click.option("-p", "--port", default=5558)
+@click.option("-p", "--port", default=5558, help="Listen port for server")
 @click.pass_context
 def start(context, port):
     """Start emerge node server"""
@@ -99,6 +108,22 @@ def mkdir(context):
 def cp(context):
     """Copy object command"""
     pass
+
+
+@cli.command()
+@click.option("-h", "--host", default="0.0.0.0", help="Hostname of server")
+@click.option("-p", "--port", default="5558", help="Listen port for server")
+@click.pass_context
+def init(context, host, port):
+    config = configparser.ConfigParser()
+
+    with open("emerge.ini", "w") as fp:
+        config.add_section("emerge")
+        config.set("emerge", "host", host)
+        config.set("emerge", "port", port)
+        config.write(fp)
+
+    click.echo("emerge.ini updated.")
 
 
 @cli.command()
