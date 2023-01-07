@@ -118,7 +118,7 @@ For the widget object, the object size is shown 5.6K
 
 ### Execute Remote Methods
 
-NOTE: Method executes on the server
+NOTE: Method executes on the server, only results are returned
 ```bash
 $ emerge call /inventory/widget total_cost
 30.0
