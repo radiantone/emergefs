@@ -245,7 +245,7 @@ The query class may retain the results as in the example above. This way, anothe
 ```python
 from emerge.core.client import Client
 
-client = Client("0.0.0.0", "6558")
+client = Client("0.0.0.0", "5558")
 
 # Just retrieve the stored query object
 query = client.getobject("/queries/query1", False)

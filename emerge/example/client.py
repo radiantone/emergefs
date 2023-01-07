@@ -62,7 +62,7 @@ We do this because we will be asking the network to perform batch calculations o
 our custom type using its data and methods """
 
 """ Connect to specific Node """
-client = Client("0.0.0.0", "6558")
+client = Client("0.0.0.0", "5558")
 
 """ Store a custom instance there """
 obj = MyClass(id="myclass", name="myclass", path="/classes")

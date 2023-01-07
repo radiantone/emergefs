@@ -32,7 +32,7 @@ class MapReduceFile(EmergeFile):
 
 query = MapReduceFile(id="mapreduce", name="mapreduce", path="/queries")
 
-client = Client("0.0.0.0", "6558")
+client = Client("0.0.0.0", "5558")
 client.store(query)
 
 results = client.query("/queries/mapreduce")

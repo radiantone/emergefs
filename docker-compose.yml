@@ -10,7 +10,7 @@ services:
     container_name: broker
     #command: ["/opt/emerge/venv/bin/emerge --debug node start"]
     ports:
-      - "6558:5558"
+      - "5558:5558"
     environment:
       ISBROKER: "true"
 
@@ -29,7 +29,7 @@ services:
     depends_on:
       - broker
     ports:
-      - "6559:5558"
+      - "5559:5558"
     links:
       - broker
     environment:

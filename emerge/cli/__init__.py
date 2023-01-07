@@ -45,7 +45,7 @@ def cli(context, debug):
     from emerge.core.client import Client
 
     """ Connect to specific Node """
-    client = Client("0.0.0.0", "6558")
+    client = Client("0.0.0.0", "5558")
 
     context.obj = {}
 
@@ -89,14 +89,14 @@ def rm(context, path):
 
 @cli.command()
 @click.pass_context
-def mkdir(context, long, directory):
+def mkdir(context):
     """Make directory command"""
     pass
 
 
 @cli.command()
 @click.pass_context
-def cp(context, long, directory):
+def cp(context):
     """Copy object command"""
     pass
 

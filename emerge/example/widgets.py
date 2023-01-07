@@ -38,7 +38,7 @@ class InventoryItem(EmergeFile):
         )
 
 
-client = Client("0.0.0.0", "6558")
+client = Client("0.0.0.0", "5558")
 
 item = InventoryItem(
     id="widget1",

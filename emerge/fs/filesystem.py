@@ -50,6 +50,10 @@ class Z0DBFileSystem(FileSystem):
             self.nodes = self.root.nodes = BTrees.OOBTree.BTree()
 
             transaction.commit()
+        else:
+            self.registry = self.root.registry
+            self.classes = self.root.classes
+            self.nodes = self.root.nodes
 
         return True
 
