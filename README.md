@@ -273,7 +273,7 @@ Output
 ## Running a Node
 
 ```bash
-$ emerge --debug node start --port 5558
+$ emerge --debug node start
 2022-08-31 10:48:34,261 : root DEBUG : Debug ON
 2022-08-31 10:48:34,322 : root INFO : Starting NodeServer on port: 5558
 2022-08-31 10:48:34,322 : root DEBUG : [NodeServer] Setup...
