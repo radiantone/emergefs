@@ -37,7 +37,7 @@ install: depends init
 .PHONY: update
 update: format lint
 	pip freeze | grep -v emerge > requirements.txt
-	git add setup.py docs bin emerge requirements.txt Makefile
+	git add setup.py docs bin emerge requirements.txt Makefile README.md scripts
 	git commit --allow-empty -m "Updates"
 	git push origin main
 	python setup.py install

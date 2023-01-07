@@ -37,6 +37,29 @@ With emerge, you simply:
 - Plain Old Python end-to-end
 - Scriptable CLI for interacting with filesystem
 
+## Usage
+
+```bash
+$ emerge
+Usage: emerge [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --debug  Debug switch
+  --help   Show this message and exit.
+
+Commands:
+  call     Call an object method
+  cat      Display contents of an object
+  code     List source code of an object
+  cp       Copy object command
+  help     Display details of an objects class
+  ls       List files in a directory
+  methods  Display available methods for an object
+  mkdir    Make directory command
+  node     Emerge node commands
+  query    Execute query method of an object
+  rm       Remove object command
+```
 ## Examples
 
 ```python
@@ -96,7 +119,7 @@ For the widget object, the object size is shown 5.6K
 ### Execute Remote Methods
 
 ```bash
-$ emerge remote /inventory/widget total_cost
+$ emerge call /inventory/widget total_cost
 30.0
 ```
 > Important to understand that the custom class `InventoryItem` with its methods was created in the client, on-the-fly and stored in emerge.
@@ -105,8 +128,145 @@ $ emerge remote /inventory/widget total_cost
 ### Execute Local Methods
 
 ```bash
-$ emerge local /inventory/widget total_cost
+$ emerge call --local /inventory/widget total_cost
 30.0
+```
+
+### Execute A Method on All Objects in a Directory
+NOTE: Execution occurs on the server
+```bash
+$ emerge call /inventory total_cost
+[30.0, 434.10034997376107, 137.4442513978148, 907.5910237092307, 129.6896355950612, 705.798940493996, 589.6721640143035, 1408.5984146794274, 1722.7589088095774]
+```
+
+### Getting Help on an Object
+```bash
+$ emerge help /inventory/widget1
+Help on InventoryItem in module __main__ object:
+
+class InventoryItem(emerge.core.objects.EmergeFile)
+ |  InventoryItem(id: str, data: str = '', name: str = '', path: str = '/', perms: str = 'rwxrwxrwx', type: str = 'file', unit_price: float = 0.0, quantity_on_hand: int = 0) -> None
+ |  
+ |  Class for keeping track of an item in inventory.
+ |  
+ |  Method resolution order:
+ |      InventoryItem
+ |      emerge.core.objects.EmergeFile
+ |      emerge.core.objects.EmergeObject
+ |      emerge.data.EmergeData
+ |      persistent.Persistent
+ |      builtins.object
+ |  
+ |  Methods defined here:
+ |  
+ |  __eq__(self, other)
+ |  
+ |  __init__(self, id: str, data: str = '', name: str = '', path: str = '/', perms: str = 'rwxrwxrwx', type: str = 'file', unit_price: float = 0.0, quantity_on_hand: int = 0) -> None
+:
+```
+
+### Getting Methods of an Object 
+```bash
+$ emerge methods /inventory/widget7
+run ()
+total_cost () -> float
+```
+
+### Showing the Source Code of an Object
+```bash
+$ emerge code /inventory/widget1
+@dataclass
+class InventoryItem(EmergeFile):
+    """Class for keeping track of an item in inventory."""
+
+    unit_price: float = 0.0
+    quantity_on_hand: int = 0
+
+    def run(self):
+        return "total cost:{}".format(self.total_cost())
+
+    def total_cost(self) -> float:
+        import logging
+
+        logging.debug("InventoryItem: total_cost executing")
+        return self.unit_price * self.quantity_on_hand
+
+    def __str__(self):
+        import json
+
+        return json.dumps(
+            {
+                "name": self.name,
+                "path": self.path,
+                "id": self.id,
+                "unit_price": self.unit_price,
+                "quantity_on_hand": self.quantity_on_hand,
+                "perms": self.perms,
+                "type": self.type,
+                "data": self.data,
+            }
+        )
+
+
+```
+
+### Querying the Filesystem
+
+Given the following object with a defined `query` method, using the `query` command will invoke the query method passing in a reference to the filesystem for the method to query.
+
+```python
+@dataclass
+class QueryFile(EmergeFile):
+    import persistent.list
+
+    results = persistent.list.PersistentList()
+
+    def query(self, fs):
+        """This only runs on the server and receives the filesystem object to traverse"""
+        import json
+
+        objs = fs.list("/inventory", True)
+        for oid in objs:
+            obj = fs.getobject(oid, True)
+            if obj.unit_price < 15:
+                self.results.append(obj)
+
+        return json.dumps([json.loads(str(result)) for result in self.results])
+```
+Invoke the query object
+```bash
+$ emerge query /queries/query1
+[{"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}, {"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}, {"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}, {"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}]
+```
+
+The query class may retain the results as in the example above. This way, another client can simply request the currently stored results without re-executing the query
+
+```python
+from emerge.core.client import Client
+
+client = Client("0.0.0.0", "6558")
+
+# Just retrieve the stored query object
+query = client.getobject("/queries/query1", False)
+
+# And access its data like a regular python object
+for result in query.results:
+    print(round(result.total_cost(), 1))
+```
+Output
+```python
+30.0
+434.1
+137.4
+30.0
+434.1
+137.4
+30.0
+434.1
+137.4
+30.0
+434.1
+137.4
 ```
 
 ## Running a Node

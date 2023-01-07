@@ -13,4 +13,4 @@ emerge call /inventory/widget5 total_cost
 emerge --debug call -l /inventory/widget5 total_cost
 emerge --debug call /inventory/widget3 total_cost
 emerge rm /inventory
-
+emerge call /inventory total_cost
