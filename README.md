@@ -118,6 +118,7 @@ For the widget object, the object size is shown 5.6K
 
 ### Execute Remote Methods
 
+NOTE: Method executes on the server
 ```bash
 $ emerge call /inventory/widget total_cost
 30.0
@@ -126,7 +127,7 @@ $ emerge call /inventory/widget total_cost
 > No code update, recompile, redeploy of the emerge network is needed.
 
 ### Execute Local Methods
-
+NOTE: Object (including its state/data) is retrieved from the server and the method invoked in the local process
 ```bash
 $ emerge call --local /inventory/widget total_cost
 30.0
