@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 
 import dill
 import zerorpc
@@ -8,6 +9,27 @@ class Client:
     def __init__(self, host, port):
         self.client = zerorpc.Client()
         self.client.connect("tcp://{}:{}".format(host, port))
+
+    def proxy(self, path):
+        file = self.getobject(path, False)
+        method_list = [
+            attribute
+            for attribute in dir(type(file))
+            if callable(getattr(type(file), attribute))
+            and attribute.startswith("_") is False
+        ]
+
+        funcs = {}
+
+        def invoke(self, oid, method):
+            return self.client.execute(oid, method)
+
+        for method in method_list:
+            funcs[method] = partial(invoke, self, path, method)
+
+        proxy = type("ClassProxy", (), funcs)
+
+        return proxy()
 
     def store(self, obj):
         import inspect

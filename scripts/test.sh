@@ -14,3 +14,15 @@ emerge --debug call -l /inventory/widget5 total_cost
 emerge --debug call /inventory/widget3 total_cost
 emerge rm /inventory
 emerge call /inventory total_cost
+emerge code /inventory/widget1
+emerge rm /inventory/widget1
+emerge rm /inventory/widget2
+emerge rm /inventory/widget3
+emerge rm /inventory/widget4
+emerge rm /inventory/widget5
+emerge rm /inventory/widget6
+emerge rm /inventory/widget7
+emerge rm /inventory/widget8
+emerge rm /inventory/widget9
+emerge rm /inventory
+emerge ls -l
