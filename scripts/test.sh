@@ -15,6 +15,7 @@ emerge --debug call /inventory/widget3 total_cost
 emerge rm /inventory
 emerge call /inventory total_cost
 emerge code /inventory/widget1
+python emerge/example/proxy.py
 emerge rm /inventory/widget1
 emerge rm /inventory/widget2
 emerge rm /inventory/widget3

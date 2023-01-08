@@ -13,3 +13,9 @@ proxies = [client.proxy(widget) for widget in widgets]
 
 # Executes each method on the server
 print([proxy.total_cost() for proxy in proxies])
+
+query = client.proxy("/queries/query1")
+
+for result in query.results:
+    print(result)
+    print(round(result.total_cost(), 1))

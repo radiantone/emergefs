@@ -21,6 +21,13 @@ class Client:
 
         funcs = {}
 
+        def getatt(self, oid, name):
+            obj = self.client.getobject(oid, False)
+            _obj = dill.loads(obj)
+            return getattr(_obj, name)
+
+        funcs["__getattr__"] = partial(getatt, self, path)
+
         def invoke(self, oid, method):
             return self.client.execute(oid, method)
 
