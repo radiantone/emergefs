@@ -269,7 +269,25 @@ Output
 434.1
 137.4
 ```
+### Using Object Proxies
+Emerge can proxy an object you created on-the-fly and stored in the filesystem so you can invoke methods on it directly, rather than using the `client` object to execute methods.
+```python
+from emerge.core.client import Client
 
+client = Client("0.0.0.0", "5558")
+
+widget1 = client.proxy("/inventory/widget1")
+# Invoke method on server
+print(widget1.total_cost())
+
+widgets = client.list("/inventory")
+print(widgets)
+
+proxies = [client.proxy(widget) for widget in widgets]
+
+# Executes each method on the server
+print([proxy.total_cost() for proxy in proxies])
+```
 ## Running a Node
 
 ```bash
