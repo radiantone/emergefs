@@ -271,7 +271,6 @@ Output
 ```
 ### Using Object Proxies
 Emerge can proxy an object you created on-the-fly and stored in the filesystem so you can invoke methods on it directly, rather than using the `client` object to execute methods.
-```python
 from emerge.core.client import Client
 
 client = Client("0.0.0.0", "5558")
@@ -287,6 +286,13 @@ proxies = [client.proxy(widget) for widget in widgets]
 
 # Executes each method on the server
 print([proxy.total_cost() for proxy in proxies])
+
+query = client.proxy("/queries/query1")
+
+# Access member as if local. results is lazy loaded from the server
+for result in query.results:
+    print(result)
+    print(round(result.total_cost(), 1))
 ```
 ## Running a Node
 
