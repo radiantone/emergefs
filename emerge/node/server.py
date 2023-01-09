@@ -342,7 +342,6 @@ class NodeServer(Server):
             logging.info("SEARCH %s", _results)
             return _results
 
-
         def store(self, id, path, name, source, obj):
             import datetime
             import json
