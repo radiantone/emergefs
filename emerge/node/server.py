@@ -6,6 +6,7 @@ from typing import List
 
 import BTrees.OOBTree
 import dill
+from littletable import Table
 
 from emerge.compute import Data
 from emerge.core.client import Client
@@ -45,6 +46,9 @@ class NodeServer(Server):
             self.fs.setup()
             self.fs.start()
             self.fs.registry["/hello"] = {"status": "ok", "message": "hello there"}
+
+            self.objects = Table("objects")
+            self.objects.create_index("id", unique=True)
 
         def sum(self):
 
@@ -433,6 +437,8 @@ class NodeServer(Server):
                         # Add my object reference to the brokers directory,
                         # pointing back to me
                         broker.register({"path": path + name})
+
+            self.objects.insert(json.loads(json.loads(str(_obj))))
 
             logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
             assert self.fs.objects == self.fs.root.objects
