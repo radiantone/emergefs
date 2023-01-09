@@ -332,7 +332,7 @@ class NodeServer(Server):
         def searchtext(self, field, query):
             base = getattr(self.objects.search, field)
             results = base(query)
-            logging.info("ST RESULTS %s",results)
+            logging.info("ST RESULTS %s", results)
             _results = []
 
             for result in results:
@@ -462,7 +462,13 @@ class NodeServer(Server):
                         broker.register({"path": path + name})
 
             logging.info("_OBJ str %s", str(_obj))
-            self.objects.insert(json.loads(str(_obj)))
+            insert_obj = json.loads(str(_obj))
+            try:
+                self.objects.insert(insert_obj)
+            except KeyError:
+                self.objects.delete(id=insert_obj["id"])
+                self.objects.insert(insert_obj)
+
             self.objects.create_search_index("data")
 
             logging.info("ROOT IS %s", [o for o in self.fs.root.objects])

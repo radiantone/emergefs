@@ -92,7 +92,7 @@ def search(context, field, query):
     client = context.obj["client"]
 
     if query is None:
-        results = client.search(lambda o: o.path == '/inventory' and o.unit_price < 200)
+        results = client.search(lambda o: o.path == "/inventory" and o.unit_price < 200)
     elif field is not None:
         results = client.searchtext(field, query)
     else:
