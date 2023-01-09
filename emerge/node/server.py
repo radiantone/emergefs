@@ -49,6 +49,7 @@ class NodeServer(Server):
 
             self.objects = Table("objects")
             self.objects.create_index("id", unique=True)
+            self.objects.create_index("data", unique=False)
 
         def sum(self):
 
@@ -329,6 +330,19 @@ class NodeServer(Server):
         def register(self, entry):
             logging.info("BROKER:register %s", entry)
 
+        def search(self, where):
+            lamd = dill.loads(where)
+            logging.info("SEARCH LAMBDA: %s", lamd)
+            results = self.objects.where(lamd)
+
+            _results = []
+
+            for result in results:
+                _results += [str(result)]
+            logging.info("SEARCH %s", _results)
+            return _results
+
+
         def store(self, id, path, name, source, obj):
             import datetime
             import json
@@ -438,7 +452,8 @@ class NodeServer(Server):
                         # pointing back to me
                         broker.register({"path": path + name})
 
-            self.objects.insert(json.loads(json.loads(str(_obj))))
+            logging.info("_OBJ str %s", str(_obj))
+            self.objects.insert(json.loads(str(_obj)))
 
             logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
             assert self.fs.objects == self.fs.root.objects

@@ -83,6 +83,17 @@ def start(context, port):
 
 
 @cli.command()
+@click.pass_context
+def search(context):
+    """Search for objects"""
+
+    client = context.obj["client"]
+
+    results = client.search(lambda o: o.unit_price < 200)
+    print(results)
+
+
+@cli.command()
 @click.argument("path")
 @click.pass_context
 def rm(context, path):

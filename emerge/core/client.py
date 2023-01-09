@@ -10,6 +10,10 @@ class Client:
         self.client = zerorpc.Client()
         self.client.connect("tcp://{}:{}".format(host, port))
 
+    def search(self, where):
+        lamd = dill.dumps(where)
+        return self.client.search(lamd)
+
     def proxy(self, path):
         file = self.getobject(path, False)
         method_list = [

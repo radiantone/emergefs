@@ -23,7 +23,7 @@ class QueryFile(EmergeFile):
         return json.dumps([json.loads(str(result)) for result in self.results])
 
 
-query = QueryFile(id="query1", name="query1", path="/queries")
+query = QueryFile(id="query1", name="query1", path="/queries", data="A query object")
 
 client = Client("0.0.0.0", "5558")
 client.store(query)
