@@ -225,7 +225,7 @@ def cmd_help(context, path):
     client = context.obj["client"]
 
     file = client.getobject(path, False)
-    print(help(file))
+    help(file)
 
 
 @cli.command()

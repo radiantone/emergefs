@@ -209,6 +209,8 @@ class NodeServer(Server):
                 # file = self.fs.root.registry[path]
                 # del self.fs.root.registry[path]
                 dir = self.fs.objects
+                file = None
+
                 for p in paths:
                     logging.info("rm: p %s of paths %s", p, paths)
                     try:
@@ -222,10 +224,13 @@ class NodeServer(Server):
                     except KeyError:
                         raise Exception("Path {} not found".format(path))
 
-                if file["type"] == "directory" and len(file["dir"]) > 0:
+                if not file:
+                    raise Exception("Path {} not found".format(path))
+
+                if file and file["type"] == "directory" and len(file["dir"]) > 0:
                     raise Exception("Directory {} not empty".format(path))
 
-                if dir != self.fs.objects:
+                if file and dir != self.fs.objects:
                     logging.info("dir %s", file)
                     del file["parent"][p]
 
