@@ -10,6 +10,9 @@ class Client:
         self.client = zerorpc.Client()
         self.client.connect("tcp://{}:{}".format(host, port))
 
+    def searchtext(self, field, query):
+        return self.client.searchtext(field, query)
+
     def search(self, where):
         lamd = dill.dumps(where)
         return self.client.search(lamd)

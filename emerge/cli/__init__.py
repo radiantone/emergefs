@@ -83,13 +83,22 @@ def start(context, port):
 
 
 @cli.command()
+@click.argument("field", required=False, default=None)
+@click.argument("query", required=False, default=None)
 @click.pass_context
-def search(context):
+def search(context, field, query):
     """Search for objects"""
 
     client = context.obj["client"]
 
-    results = client.search(lambda o: o.unit_price < 200)
+    if query is None:
+        results = client.search(lambda o: o.path == '/inventory' and o.unit_price < 200)
+    elif field is not None:
+        results = client.searchtext(field, query)
+    else:
+        click.echo("Must provide object field")
+        return
+
     print(results)
 
 

@@ -49,7 +49,6 @@ class NodeServer(Server):
 
             self.objects = Table("objects")
             self.objects.create_index("id", unique=True)
-            self.objects.create_index("data", unique=False)
 
         def sum(self):
 
@@ -330,6 +329,17 @@ class NodeServer(Server):
         def register(self, entry):
             logging.info("BROKER:register %s", entry)
 
+        def searchtext(self, field, query):
+            base = getattr(self.objects.search, field)
+            results = base(query)
+            logging.info("ST RESULTS %s",results)
+            _results = []
+
+            for result in results:
+                _results += [str(result)]
+            logging.info("SEARCHTEXT %s", _results)
+            return _results
+
         def search(self, where):
             lamd = dill.loads(where)
             logging.info("SEARCH LAMBDA: %s", lamd)
@@ -453,6 +463,7 @@ class NodeServer(Server):
 
             logging.info("_OBJ str %s", str(_obj))
             self.objects.insert(json.loads(str(_obj)))
+            self.objects.create_search_index("data")
 
             logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
             assert self.fs.objects == self.fs.root.objects
