@@ -122,6 +122,10 @@ def rm(context, path):
 def mkdir(context, directory):
     """Make directory command"""
     client = context.obj["client"]
+    if directory[0] != "/":
+        click.echo("Directory path must be absolute path e.g. /some/dir")
+        return
+
     try:
         client.mkdir(directory)
     except RemoteError as ex:

@@ -199,10 +199,10 @@ class NodeServer(Server):
                 splits = path.split("/")
                 name = path.rsplit("/")[-1]
 
-                dir = {
+                dir_obj = {
                     "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                     "path": path,
-                    "name": name,
+                    "name": path,
                     "id": path,
                     "perms": "rwxrwxrwx",
                     "type": "directory",
@@ -214,7 +214,7 @@ class NodeServer(Server):
                 # del self.fs.root.registry[path]
                 dir = self.fs.objects
 
-                for p in splits:
+                for p in paths:
                     logging.info("mkdir: name %s p %s of paths %s", name, p, paths)
                     try:
                         file = dir[p]
@@ -225,8 +225,8 @@ class NodeServer(Server):
                             raise Exception("Path {} not found".format(p))
 
                         logging.info("{} directory created".format(p))
-                        self.fs.objects[path] = dir
-                        self.fs.root.registry[path] = dir
+                        dir[name] = dir_obj
+                        self.fs.root.registry[path] = dir_obj
 
         def rm(self, path):
             try:
