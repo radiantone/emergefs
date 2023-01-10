@@ -1,1 +1,19 @@
 # NOTES
+
+Features Implemented
+
+- Metadata filesystem tree
+- Flat registry namespace
+- Flat uuid object store
+
+- Create, list, remove directories
+- Store, remove custom classes/objects
+- Cat an object's state/data
+- List, Invoke methods on an object
+- Get help on object/class
+- List code for an object
+- Execute query objects
+- Searchable indexes over object store
+- Search fields of object and return results
+- Run a method over entire directory, return results
+-
