@@ -2,6 +2,8 @@ import logging
 import os
 import signal
 import threading
+import graphene
+
 from typing import List
 
 import BTrees.OOBTree
@@ -48,7 +50,15 @@ class NodeServer(Server):
             self.fs.registry["/hello"] = {"status": "ok", "message": "hello there"}
 
             self.objects = Table("objects")
-            self.objects.create_index("id", unique=True)
+
+
+        def graphql(self, query):
+            import json
+            logging.info("graphql: query: %s", query)
+            result = self.schema.execute(query)
+            logging.info("RESULT %s", json.dumps(result.data, indent=4))
+
+            return result.data
 
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
@@ -359,6 +369,85 @@ class NodeServer(Server):
             import dill
 
             _obj = dill.loads(obj)
+
+            def make_graphql(obj):
+                import json
+                from functools import partial
+
+                data = json.loads(str(obj))
+                fields = {}
+
+                for key, value in data.items():
+                    if type(value) is str:
+                        fields[key] = graphene.String()
+
+                    if type(value) is int:
+                        fields[key] = graphene.Int()
+
+                    if type(value) is float:
+                        fields[key] = graphene.Float()
+
+                item = type(obj.__class__.__name__+"Resolver", (graphene.ObjectType,), fields)
+
+                class QueryClass(graphene.ObjectType):
+                    pass
+
+                def resolver(root, info, **kwargs):
+                    import json
+                    logging.info("resolve_widget: kwargs %s %s", info.field_name, kwargs)
+
+                    # use search indices
+                    def search_func(o):
+                        logging.info("search_func: %s %s",o, kwargs)
+                        for key, val in kwargs.items():
+                            if val:
+                                value = getattr(o, key)
+                                logging.info("search_func: val %s value %s",val, value)
+                                if value != val:
+                                    logging.info("search_func: returning False")
+                                    return False
+                        logging.info("search_func: returning True")
+                        return True
+
+                    results = self.objects.where(search_func)
+                    logging.info("resolver RESULTS %s", [str(result) for result in results])
+                    try:
+                        _results = [json.loads(str(result)) for result in results]
+                        logging.info("resolver _results1 %s", [result for result in _results])
+                        _results = [item(**result) for result in _results]
+                    except Exception as ex:
+                        logging.error(ex)
+                    logging.info("resolver _results2 %s", _results)
+
+                    if info.field_name.find('List') >= 0:
+                        return _results
+                    else:
+                        return _results[0]
+
+
+                qfields = {}
+                qfields[obj.__class__.__name__] = graphene.Field(item, **fields)
+                qfields[obj.__class__.__name__+'List'] = graphene.List(item)
+                params = {}
+
+                for key in fields.keys():
+                    params[key] = None
+
+                logging.info("make_grapql: params: %s", params)
+                qfields['resolve_'+obj.__class__.__name__] = partial(resolver, **params)
+                qfields['resolve_'+obj.__class__.__name__+'List'] = partial(resolver, **params)
+                logging.info("make_grapql: fields: %s", fields)
+                logging.info("make_grapql: qfields: %s", qfields)
+                query = type(obj.__class__.__name__+'Query', (QueryClass,), qfields)
+                logging.info("make_grapql: query: %s", query)
+
+                self.schema = graphene.Schema(query=query)
+                logging.info("make_graphql: schema %s %s ::%s:: %s", self.schema, item, item.name, fields)
+
+                return fields
+
+            _fields = make_graphql(_obj)
+
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
             self.fs.root.classes[_obj.__class__.__name__] = _obj.__class__
             _uuid = str(uuid4())
@@ -468,10 +557,16 @@ class NodeServer(Server):
             logging.info("_OBJ str %s", str(_obj))
             insert_obj = json.loads(str(_obj))
             try:
-                self.objects.insert(insert_obj)
+                self.objects.insert(_obj)
             except KeyError:
                 self.objects.delete(id=insert_obj["id"])
-                self.objects.insert(insert_obj)
+                self.objects.insert(_obj)
+
+            for key in _fields.keys():
+                try:
+                    self.objects.create_index(key, unique=key == "id")
+                except:
+                    pass
 
             self.objects.create_search_index("data")
 

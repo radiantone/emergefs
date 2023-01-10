@@ -59,6 +59,10 @@ class Client:
         _file = dill.loads(file)
         return _file
 
+    def graphql(self, query):
+
+        return self.client.graphql(query)
+
     def mkdir(self, directory):
         self.client.mkdir(directory)
         print(directory + " created.")

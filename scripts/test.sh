@@ -18,6 +18,7 @@ emerge code /inventory/widget1
 emerge search data data
 emerge search
 python emerge/example/proxy.py
+emerge graphql
 emerge rm /inventory/widget1
 emerge rm /inventory/widget2
 emerge rm /inventory/widget3
