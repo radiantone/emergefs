@@ -1,0 +1,7 @@
+query {
+  InventoryItem(name: "widget1") {
+    name
+    id
+    path
+  }
+}

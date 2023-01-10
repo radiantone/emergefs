@@ -103,39 +103,13 @@ def search(context, field, query):
 
 
 @cli.command()
+@click.argument("query", required=False, default=None)
 @click.pass_context
-def graphql(context):
+def graphql(context, query):
     """graphql call"""
     client = context.obj["client"]
 
-    query1 = """
-        query {
-          InventoryItem(name: "widget1") {
-            name
-            id
-            path
-          }
-        }
-    """
-    query2 = """
-        query {
-          InventoryItem(name: "widget12") {
-            name
-            id
-            path
-          }
-        }
-    """
-    query3 = """
-        query {
-          InventoryItemList {
-            name
-            id
-            path
-          }
-        }
-    """
-    print(client.graphql(query2))
+    print(client.graphql(query))
 
 
 @cli.command()

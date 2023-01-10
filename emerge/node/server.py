@@ -2,12 +2,11 @@ import logging
 import os
 import signal
 import threading
-import graphene
-
 from typing import List
 
 import BTrees.OOBTree
 import dill
+import graphene
 from littletable import Table
 
 from emerge.compute import Data
@@ -51,9 +50,9 @@ class NodeServer(Server):
 
             self.objects = Table("objects")
 
-
         def graphql(self, query):
             import json
+
             logging.info("graphql: query: %s", query)
             result = self.schema.execute(query)
             logging.info("RESULT %s", json.dumps(result.data, indent=4))
@@ -387,22 +386,27 @@ class NodeServer(Server):
                     if type(value) is float:
                         fields[key] = graphene.Float()
 
-                item = type(obj.__class__.__name__+"Resolver", (graphene.ObjectType,), fields)
+                item = type(
+                    obj.__class__.__name__ + "Resolver", (graphene.ObjectType,), fields
+                )
 
                 class QueryClass(graphene.ObjectType):
                     pass
 
                 def resolver(root, info, **kwargs):
                     import json
-                    logging.info("resolve_widget: kwargs %s %s", info.field_name, kwargs)
+
+                    logging.info(
+                        "resolve_widget: kwargs %s %s", info.field_name, kwargs
+                    )
 
                     # use search indices
                     def search_func(o):
-                        logging.info("search_func: %s %s",o, kwargs)
+                        logging.info("search_func: %s %s", o, kwargs)
                         for key, val in kwargs.items():
                             if val:
                                 value = getattr(o, key)
-                                logging.info("search_func: val %s value %s",val, value)
+                                logging.info("search_func: val %s value %s", val, value)
                                 if value != val:
                                     logging.info("search_func: returning False")
                                     return False
@@ -410,39 +414,52 @@ class NodeServer(Server):
                         return True
 
                     results = self.objects.where(search_func)
-                    logging.info("resolver RESULTS %s", [str(result) for result in results])
+                    logging.info(
+                        "resolver RESULTS %s", [str(result) for result in results]
+                    )
                     try:
                         _results = [json.loads(str(result)) for result in results]
-                        logging.info("resolver _results1 %s", [result for result in _results])
+                        logging.info(
+                            "resolver _results1 %s", [result for result in _results]
+                        )
                         _results = [item(**result) for result in _results]
                     except Exception as ex:
                         logging.error(ex)
                     logging.info("resolver _results2 %s", _results)
 
-                    if info.field_name.find('List') >= 0:
+                    if info.field_name.find("List") >= 0:
                         return _results
                     else:
                         return _results[0]
 
-
                 qfields = {}
                 qfields[obj.__class__.__name__] = graphene.Field(item, **fields)
-                qfields[obj.__class__.__name__+'List'] = graphene.List(item)
+                qfields[obj.__class__.__name__ + "List"] = graphene.List(item)
                 params = {}
 
                 for key in fields.keys():
                     params[key] = None
 
                 logging.info("make_grapql: params: %s", params)
-                qfields['resolve_'+obj.__class__.__name__] = partial(resolver, **params)
-                qfields['resolve_'+obj.__class__.__name__+'List'] = partial(resolver, **params)
+                qfields["resolve_" + obj.__class__.__name__] = partial(
+                    resolver, **params
+                )
+                qfields["resolve_" + obj.__class__.__name__ + "List"] = partial(
+                    resolver, **params
+                )
                 logging.info("make_grapql: fields: %s", fields)
                 logging.info("make_grapql: qfields: %s", qfields)
-                query = type(obj.__class__.__name__+'Query', (QueryClass,), qfields)
+                query = type(obj.__class__.__name__ + "Query", (QueryClass,), qfields)
                 logging.info("make_grapql: query: %s", query)
 
                 self.schema = graphene.Schema(query=query)
-                logging.info("make_graphql: schema %s %s ::%s:: %s", self.schema, item, item.name, fields)
+                logging.info(
+                    "make_graphql: schema %s %s ::%s:: %s",
+                    self.schema,
+                    item,
+                    item.name,
+                    fields,
+                )
 
                 return fields
 
