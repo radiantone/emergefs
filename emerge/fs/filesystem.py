@@ -26,6 +26,7 @@ class FileSystemFactory:
 class Z0DBFileSystem(FileSystem):
     root: Any = None
     objects: Any = None
+    uuids: Any = None
 
     def setup(self, options: dict = {}) -> bool:
         import transaction
@@ -49,10 +50,13 @@ class Z0DBFileSystem(FileSystem):
 
             self.nodes = self.root.nodes = BTrees.OOBTree.BTree()
 
+            self.uuids = self.root.nodes = BTrees.OOBTree.BTree()
+
             transaction.commit()
         else:
             self.registry = self.root.registry
             self.classes = self.root.classes
+            self.uuids = self.root.uuids
             self.nodes = self.root.nodes
 
         return True

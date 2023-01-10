@@ -50,44 +50,6 @@ class NodeServer(Server):
             self.objects = Table("objects")
             self.objects.create_index("id", unique=True)
 
-        def sum(self):
-
-            inventory = self.fs.objects["/inventory"]
-
-            logging.info("objects length: %s %s", inventory, len(inventory))
-
-            for object_ in inventory:
-                object__: Data = inventory[object_]
-
-                if type(object__) is bytes:
-                    object__ = dill.loads(object__)
-                try:
-                    logging.info(
-                        "object: %s %s %s",
-                        type(object__),
-                        object__.id,
-                        str(object__.unit_price),
-                    )
-                except:
-                    pass
-
-            from functools import reduce
-
-            try:
-                sum_a = reduce(
-                    lambda x, y: x + y,
-                    [
-                        dill.loads(inventory[name]["obj"]).unit_price
-                        for name in inventory
-                    ],
-                )
-
-                print("SUM:", sum_a)
-            except:
-                import traceback
-
-                print(traceback.format_exc())
-
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
 
@@ -124,13 +86,15 @@ class NodeServer(Server):
             obj = self.fs.root.registry[path]
             logging.info("getobject: object %s", obj)
 
+            # TODO: Replace with uuid object
             def make_object(classname, data):
                 _class = self.fs.root.classes[classname]
 
                 return _class(**data)
 
             logging.info("make_object %s %s", obj["class"], obj["obj"])
-            the_obj = make_object(obj["class"], obj["obj"])
+            # the_obj = make_object(obj["class"], obj["obj"])
+            the_obj = self.fs.uuids[obj["uuid"]]
             if nodill:
                 return the_obj
 
@@ -324,27 +288,39 @@ class NodeServer(Server):
                 return files
 
         def execute(self, oid, method):
+            import transaction
+
+            # Replace with UUID object reference
             def make_object(classname, data):
                 _class = self.fs.root.classes[classname]
 
                 return _class(**data)
 
-            try:
-                obj = self.fs.registry[oid]
+            mgr = transaction.TransactionManager()
 
-                if obj["type"] == "directory":
-                    results = []
-                    for name in obj["dir"]:
-                        child = self.fs.registry[obj["path"] + "/" + name]
-                        logging.info("%s", child)
-                        the_obj = make_object(child["class"], child["obj"])
+            try:
+                with mgr as trans:
+                    obj = self.fs.registry[oid]
+
+                    if obj["type"] == "directory":
+                        results = []
+                        for name in obj["dir"]:
+                            child = self.fs.registry[obj["path"] + "/" + name]
+                            logging.info("%s", child)
+                            the_obj = make_object(child["class"], child["obj"])
+                            _method = getattr(the_obj, method)
+                            results += [_method()]
+                        return results
+                    else:
+                        # the_obj = make_object(obj["class"], obj["obj"])
+                        the_obj = self.fs.uuids[obj["uuid"]]
                         _method = getattr(the_obj, method)
-                        results += [_method()]
-                    return results
-                else:
-                    the_obj = make_object(obj["class"], obj["obj"])
-                    _method = getattr(the_obj, method)
-                    return _method()
+                        logging.info("Calling method %s on %s", method, the_obj)
+                        # TODO: Execute on the uuid stored object
+                        # obj["obj"] = json.loads(str(the_obj))
+                        result = _method()
+                        logging.info("After calling method %s: %s", method, the_obj)
+                        return result
             except KeyError:
                 return "No such object {}".format(oid)
 
@@ -377,6 +353,7 @@ class NodeServer(Server):
         def store(self, id, path, name, source, obj):
             import datetime
             import json
+            from uuid import uuid4
 
             import BTrees.OOBTree
             import dill
@@ -384,6 +361,9 @@ class NodeServer(Server):
             _obj = dill.loads(obj)
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
             self.fs.root.classes[_obj.__class__.__name__] = _obj.__class__
+            _uuid = str(uuid4())
+
+            self.fs.uuids[_uuid] = _obj
 
             file = {
                 "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
@@ -395,6 +375,8 @@ class NodeServer(Server):
                 "type": _obj.type,
                 "class": _obj.__class__.__name__,
                 "size": len(obj),
+                "uuid": _uuid,
+                # TODO: Remove in favor of uuid stored object
                 "obj": json.loads(str(_obj)),
             }
 

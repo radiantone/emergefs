@@ -11,6 +11,7 @@ class InventoryItem(EmergeFile):
 
     unit_price: float = 0.0
     quantity_on_hand: int = 0
+    totalcost: float = 0
 
     def run(self):
         return "total cost:{}".format(self.total_cost())
@@ -19,7 +20,8 @@ class InventoryItem(EmergeFile):
         import logging
 
         logging.debug("InventoryItem: total_cost executing")
-        return self.unit_price * self.quantity_on_hand
+        self.totalcost = self.unit_price * self.quantity_on_hand
+        return self.totalcost
 
     def __str__(self):
         import json
@@ -29,6 +31,7 @@ class InventoryItem(EmergeFile):
                 "name": self.name,
                 "path": self.path,
                 "id": self.id,
+                "totalcost": self.totalcost,
                 "unit_price": self.unit_price,
                 "quantity_on_hand": self.quantity_on_hand,
                 "perms": self.perms,
@@ -52,7 +55,7 @@ client.store(item)
 print(item)
 
 
-print(client.run("/inventory/widget1", "total_cost"))
+# print(client.run("/inventory/widget1", "total_cost"))
 
 
 for i in range(2, 10):
