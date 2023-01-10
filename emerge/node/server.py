@@ -307,7 +307,7 @@ class NodeServer(Server):
                         for name in obj["dir"]:
                             child = self.fs.registry[obj["path"] + "/" + name]
                             logging.info("%s", child)
-                            the_obj = make_object(child["class"], child["obj"])
+                            the_obj = self.fs.uuids[child["uuid"]]
                             _method = getattr(the_obj, method)
                             results += [_method()]
                         return results

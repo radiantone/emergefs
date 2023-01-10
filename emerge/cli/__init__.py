@@ -106,7 +106,7 @@ def search(context, field, query):
 @click.argument("path")
 @click.pass_context
 def rm(context, path):
-    """Remove object command"""
+    """Remove an object"""
 
     client = context.obj["client"]
 
@@ -120,7 +120,7 @@ def rm(context, path):
 @click.argument("directory")
 @click.pass_context
 def mkdir(context, directory):
-    """Make directory command"""
+    """Make a directory"""
     client = context.obj["client"]
     if directory[0] != "/":
         click.echo("Directory path must be absolute path e.g. /some/dir")
