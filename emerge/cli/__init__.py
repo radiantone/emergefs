@@ -92,7 +92,7 @@ def search(context, field, query):
     client = context.obj["client"]
 
     if query is None:
-        results = client.search(lambda o: o.path == "/inventory" and o.unit_price < 200)
+        results = client.search(lambda o: o.path == "/inventory" and o.unit_price < 10)
     elif field is not None:
         results = client.searchtext(field, query)
     else:
@@ -112,15 +112,20 @@ def rm(context, path):
 
     try:
         client.rm(path)
-    except Exception as ex:
+    except RemoteError as ex:
         print(ex.msg)
 
 
 @cli.command()
+@click.argument("directory")
 @click.pass_context
-def mkdir(context):
+def mkdir(context, directory):
     """Make directory command"""
-    pass
+    client = context.obj["client"]
+    try:
+        client.mkdir(directory)
+    except RemoteError as ex:
+        print(ex.msg)
 
 
 @cli.command()

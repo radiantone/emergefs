@@ -187,24 +187,46 @@ class NodeServer(Server):
                 return obj
 
         def mkdir(self, path):
+
+            logging.info("mkdir: path is %s", path)
             try:
-                self.fs.objects[path]
+                self.fs.root.registry[path]
                 raise Exception("Path {} already exists".format(path))
             except KeyError:
+                logging.info("mkdir: making new path is %s", path)
                 import datetime
+
+                splits = path.split("/")
+                name = path.rsplit("/")[-1]
 
                 dir = {
                     "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                     "path": path,
-                    "name": path,
+                    "name": name,
                     "id": path,
                     "perms": "rwxrwxrwx",
                     "type": "directory",
                     "size": 0,
                     "dir": BTrees.OOBTree.BTree(),
                 }
+                paths = splits[1:]
+                # file = self.fs.root.registry[path]
+                # del self.fs.root.registry[path]
+                dir = self.fs.objects
 
-                self.fs.objects[path] = dir
+                for p in splits:
+                    logging.info("mkdir: name %s p %s of paths %s", name, p, paths)
+                    try:
+                        file = dir[p]
+                        if file["type"] == "directory":
+                            dir = file["dir"]
+                    except KeyError:
+                        if p != name:
+                            raise Exception("Path {} not found".format(p))
+
+                        logging.info("{} directory created".format(p))
+                        self.fs.objects[path] = dir
+                        self.fs.root.registry[path] = dir
 
         def rm(self, path):
             try:

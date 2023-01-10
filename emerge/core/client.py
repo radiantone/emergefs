@@ -59,6 +59,10 @@ class Client:
         _file = dill.loads(file)
         return _file
 
+    def mkdir(self, directory):
+        self.client.mkdir(directory)
+        print(directory + " created.")
+
     def rm(self, path):
         self.client.rm(path)
         print(path + " removed.")
