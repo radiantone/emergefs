@@ -35,12 +35,20 @@ class Z0DBFileSystem(FileSystem):
         storage = ZODB.FileStorage.FileStorage("emerge.fs")
         db = self.db = ZODB.DB(storage)
         self.connection = db.open()
+        #self.root.hello = "".join(["there" for i in range(0,100)])
         self.root = self.connection.root()
+        logging.info("self.root %s", self.root)
+        try:
+            #transaction.commit()
+            logging.info("self.root len %d", len(self.root))
+        except Exception as ex:
+            logging.error(ex)
 
-        transaction.begin()
         logging.info("Creating new objects collection")
 
         if not hasattr(self.root, "objects"):
+            logging.info("Creating new filesystem")
+            transaction.begin()
             self.root.objects = BTrees.OOBTree.BTree()
             self.objects = self.root.objects
 
@@ -50,14 +58,17 @@ class Z0DBFileSystem(FileSystem):
 
             self.nodes = self.root.nodes = BTrees.OOBTree.BTree()
 
-            self.uuids = self.root.nodes = BTrees.OOBTree.BTree()
+            self.uuids = self.root.uuids = BTrees.OOBTree.BTree()
 
             transaction.commit()
         else:
+            logging.info("Using loaded filesystem")
             self.registry = self.root.registry
             self.classes = self.root.classes
             self.uuids = self.root.uuids
             self.nodes = self.root.nodes
+            self.objects = self.root.objects
+        logging.info("self.root.objects %d", len(self.root.objects))
 
         return True
 
@@ -65,8 +76,10 @@ class Z0DBFileSystem(FileSystem):
     def session(self):
         import transaction
 
+        logging.info("transaction begin")
         yield transaction.begin()
 
+        logging.info("transaction commit")
         transaction.commit()
 
     def start(self) -> bool:

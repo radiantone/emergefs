@@ -105,6 +105,16 @@ def search(context, field, query):
 @cli.command()
 @click.argument("query", required=False, default=None)
 @click.pass_context
+def hello(context, query):
+    """Say hello"""
+    client = context.obj["client"]
+
+    print(client.hello(query))
+
+
+@cli.command()
+@click.argument("query", required=False, default=None)
+@click.pass_context
 def graphql(context, query):
     """graphql call"""
     client = context.obj["client"]

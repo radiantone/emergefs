@@ -13,11 +13,11 @@ services:
       - "5558:5558"
     environment:
       ISBROKER: "true"
-
     networks:
       - emerge
     volumes:
       - .:/opt/emerge/code
+      - ./data:/opt/emerge/data
 
   emerge2:
     image: radiantone/emerge:latest

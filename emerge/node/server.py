@@ -48,6 +48,11 @@ class NodeServer(Server):
             self.fs.start()
             self.fs.registry["/hello"] = {"status": "ok", "message": "hello there"}
 
+            logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
+            #with self.fs.session():
+            #    """If the path is already created, set the directory to that path"""
+            #    self.fs.root.objects["hello"] = ["hello", "there"]
+
             self.objects = Table("objects")
 
         def graphql(self, query):
@@ -61,6 +66,11 @@ class NodeServer(Server):
 
         def hello(self, address):
             logging.info("HELLO FROM {}".format(address))
+            connection = self.fs.db.open()
+            import transaction
+            transaction.begin()
+            root = connection.root()
+            transaction.commit()
 
         def registry(self):
             import platform
@@ -78,9 +88,12 @@ class NodeServer(Server):
             return {"registry": registry, "host": platform.node()}
 
         def query(self, path, page=0, size=-1):
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             obj = self.getobject(path, True)
             logging.info("query: obj %s %s", obj, type(obj))
-            logging.info("fs.objects %s", self.fs.root.objects)
+            logging.info("fs.objects %s", fsroot.objects)
             if hasattr(obj, "query"):
                 # Object implements query method and receives the database reference
                 # From there, the query method can scan the database and build a list of
@@ -90,20 +103,16 @@ class NodeServer(Server):
 
         def getobject(self, path, nodill, page=0, size=-1):
 
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             logging.info("getobject: path = %s", path)
 
-            obj = self.fs.root.registry[path]
+            obj = fsroot.registry[path]
             logging.info("getobject: object %s", obj)
 
-            # TODO: Replace with uuid object
-            def make_object(classname, data):
-                _class = self.fs.root.classes[classname]
-
-                return _class(**data)
-
-            logging.info("make_object %s %s", obj["class"], obj["obj"])
-            # the_obj = make_object(obj["class"], obj["obj"])
-            the_obj = self.fs.uuids[obj["uuid"]]
+            logging.info("uuids %s",[uuid for uuid in fsroot.uuids])
+            the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
             if nodill:
                 return the_obj
 
@@ -112,16 +121,19 @@ class NodeServer(Server):
 
             elif obj["type"] == "directory":
                 return [
-                    dill.dumps(make_object(obj[o]["class"]), obj[o]["obj"])
+                    dill.dumps(fsroot.uuids[obj["uuid"]])
                     for o in obj["dir"]
                 ]
 
         def get(self, path, page=0, size=-1):
 
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             logging.info("get: path = %s", path)
 
-            if path in self.fs.root.registry:
-                obj = self.fs.root.registry[path]
+            if path in fsroot.registry:
+                obj = fsroot.registry[path]
 
                 if obj["type"] == "directory":
                     obj["size"] = len(obj["dir"])
@@ -146,8 +158,11 @@ class NodeServer(Server):
 
         def getdir(self, path, page=0, size=-1):
 
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             logging.info("getdir: path = %s", path)
-            obj = self.fs.root.registry[path]
+            obj = fsroot.registry[path]
 
             if obj["type"] == "directory":
                 return [dill.dumps(obj["dir"][o]) for o in obj["dir"]]
@@ -161,9 +176,12 @@ class NodeServer(Server):
 
         def mkdir(self, path):
 
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             logging.info("mkdir: path is %s", path)
             try:
-                self.fs.root.registry[path]
+                fsroot.registry[path]
                 raise Exception("Path {} already exists".format(path))
             except KeyError:
                 logging.info("mkdir: making new path is %s", path)
@@ -183,9 +201,7 @@ class NodeServer(Server):
                     "dir": BTrees.OOBTree.BTree(),
                 }
                 paths = splits[1:]
-                # file = self.fs.root.registry[path]
-                # del self.fs.root.registry[path]
-                dir = self.fs.objects
+                dir = fsroot.objects
 
                 for p in paths:
                     logging.info("mkdir: name %s p %s of paths %s", name, p, paths)
@@ -199,15 +215,16 @@ class NodeServer(Server):
 
                         logging.info("{} directory created".format(p))
                         dir[name] = dir_obj
-                        self.fs.root.registry[path] = dir_obj
+                        fsroot.registry[path] = dir_obj
 
         def rm(self, path):
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             try:
                 paths = path.split("/")[1:]
                 logging.info("rm: path is %s", path)
-                # file = self.fs.root.registry[path]
-                # del self.fs.root.registry[path]
-                dir = self.fs.objects
+                dir = fsroot.objects
                 file = None
 
                 for p in paths:
@@ -229,7 +246,7 @@ class NodeServer(Server):
                 if file and file["type"] == "directory" and len(file["dir"]) > 0:
                     raise Exception("Directory {} not empty".format(path))
 
-                if file and dir != self.fs.objects:
+                if file and dir != fsroot.objects:
                     logging.info("dir %s", file)
                     del file["parent"][p]
 
@@ -237,23 +254,29 @@ class NodeServer(Server):
                 raise Exception("Path {} not found".format(path))
 
         def cp(self, source, dest):
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             try:
-                _source = self.fs.objects[source]
+                _source = fsroot.objects[source]
             except KeyError:
                 raise Exception("Path {} not found".format(source))
 
             file = dill.dumps(_source)
 
-            self.fs.objects[dest] = dill.loads(file)
+            fsroot.objects[dest] = dill.loads(file)
 
         def list(self, path, nodill, offset=0, size=0):
-            logging.info("list: path %s", path)
-            logging.info("root id is %s", self.fs.root.objects)
+            connection = self.fs.db.open()
 
-            logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
+            fsroot = connection.root()
+            logging.info("list: path %s", path)
+            logging.info("root id is %s", fsroot.objects)
+
+            logging.info("ROOT IS %s", [o for o in fsroot.objects])
             if path != "/":
                 paths = path.split("/")[1:]
-                dir = self.fs.objects
+                dir = fsroot.objects
                 for p in paths:
                     logging.info("list: p %s of paths %s", p, paths)
                     try:
@@ -268,12 +291,12 @@ class NodeServer(Server):
                     except KeyError:
                         raise Exception("Path {} not found".format(path))
 
-                if dir == self.fs.objects:
+                if dir == fsroot.objects:
                     raise Exception("Path {} not found".format(path))
                 obj = dir
                 logging.info("found %s in %s %s", path, dir, len(obj))
             else:
-                obj = self.fs.root.objects
+                obj = fsroot.objects
                 logging.info("obj is self.fs.objects %s", len(obj))
 
             logging.info("LIST: %s", list(obj))
@@ -297,46 +320,44 @@ class NodeServer(Server):
                 return files
 
         def execute(self, oid, method):
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
             import transaction
 
-            # Replace with UUID object reference
-            def make_object(classname, data):
-                _class = self.fs.root.classes[classname]
-
-                return _class(**data)
-
-            mgr = transaction.TransactionManager()
-
+            transaction.begin()
             try:
-                with mgr as trans:
-                    obj = self.fs.registry[oid]
+                obj = fsroot.registry[oid]
 
-                    if obj["type"] == "directory":
-                        results = []
-                        for name in obj["dir"]:
-                            child = self.fs.registry[obj["path"] + "/" + name]
-                            logging.info("%s", child)
-                            the_obj = self.fs.uuids[child["uuid"]]
-
-                            if hasattr(the_obj, method):
-                                _method = getattr(the_obj, method)
-                                results += [_method()]
-                        return results
-                    else:
-                        # the_obj = make_object(obj["class"], obj["obj"])
-                        the_obj = self.fs.uuids[obj["uuid"]]
+                if obj["type"] == "directory":
+                    results = []
+                    for name in obj["dir"]:
+                        child = fsroot.registry[obj["path"] + "/" + name]
+                        logging.info("%s", child)
+                        the_obj = dill.loads(fsroot.uuids[child["uuid"]])
 
                         if hasattr(the_obj, method):
                             _method = getattr(the_obj, method)
-                            logging.info("Calling method %s on %s", method, the_obj)
-                            # obj["obj"] = json.loads(str(the_obj))
-                            result = _method()
-                            logging.info("After calling method %s: %s", method, the_obj)
-                            return result
-                        else:
-                            return None
+                            fsroot.uuids[child["uuid"]] = dill.dumps(the_obj)
+                            results += [_method()]
+                    return results
+                else:
+                    the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
+
+                    if hasattr(the_obj, method):
+                        _method = getattr(the_obj, method)
+                        logging.info("Calling method %s on %s", method, the_obj)
+                        result = _method()
+                        logging.info("after method obj %s", str(the_obj))
+                        fsroot.uuids[obj["uuid"]] = dill.dumps(the_obj)
+                        logging.info("After calling method %s: %s", method, the_obj)
+                        return result
+                    else:
+                        return None
             except KeyError:
                 return "No such object {}".format(oid)
+            finally:
+                transaction.commit()
 
         def register(self, entry):
             logging.info("BROKER:register %s", entry)
@@ -373,7 +394,9 @@ class NodeServer(Server):
             import dill
 
             _obj = dill.loads(obj)
+            connection = self.fs.db.open()
 
+            fsroot = connection.root()
             def make_graphql(obj):
                 import json
                 from functools import partial
@@ -471,10 +494,12 @@ class NodeServer(Server):
             _fields = make_graphql(_obj)
 
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
-            self.fs.root.classes[_obj.__class__.__name__] = _obj.__class__
+            fsroot.classes[_obj.__class__.__name__] = _obj.__class__
             _uuid = str(uuid4())
 
-            self.fs.uuids[_uuid] = _obj
+            import transaction
+            transaction.begin()
+            fsroot.uuids[_uuid] = dill.dumps(_obj)
 
             file = {
                 "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
@@ -487,95 +512,94 @@ class NodeServer(Server):
                 "class": _obj.__class__.__name__,
                 "size": len(obj),
                 "uuid": _uuid,
-                # TODO: Remove in favor of uuid stored object
                 "obj": json.loads(str(_obj)),
             }
 
             logging.info("STORE: %s", file)
-            with self.fs.session():
 
-                """If the path is already created, set the directory to that path"""
-                if path in self.fs.root.objects:
-                    directory = self.fs.root.objects[path]
-                    logging.info("Found %s in self.fs.root.objects", path)
-                else:
-                    """Create all the BTree objects for each section in the path"""
-                    paths = path.split("/")[1:]
-                    base = ""
-                    root = _root = self.fs.root.objects
-                    logging.info("store: paths: %s", paths)
-                    logging.info("root id %s", root)
+            """If the path is already created, set the directory to that path"""
+            if path in fsroot.objects:
+                directory = fsroot.objects[path]
+                logging.info("Found %s in root.objects", path)
+            else:
+                """Create all the BTree objects for each section in the path"""
+                paths = path.split("/")[1:]
+                base = ""
+                root = _root = fsroot.objects
+                logging.info("store: paths: %s", paths)
+                logging.info("root id %s", root)
 
-                    """ Create BTree directories for each subpath if it doesn't exist
-                    then set the directory to the last BTree in the path """
-                    for p in paths:
-                        _path = base + "/" + p
-                        logging.info("store: _path is now %s", _path)
-                        if p in root:
-                            logging.info("store: p %s found in root %s", p, root)
-                            root = directory = root[p]["dir"]
-                            logging.info("store: new root is %s", root)
-                            base = _path
-                        else:
-                            dir = {
-                                "date": str(
-                                    datetime.datetime.now().strftime(
-                                        "%b %d %Y %H:%M:%S"
-                                    )
-                                ),
-                                "path": _path,
-                                "name": _path,
-                                "id": _path,
-                                "perms": "rwxrwxrwx",
-                                "parent": root,
-                                "type": "directory",
-                                "size": 0,
-                                "dir": BTrees.OOBTree.BTree(),
-                            }
+                """ Create BTree directories for each subpath if it doesn't exist
+                then set the directory to the last BTree in the path """
+                for p in paths:
+                    _path = base + "/" + p
+                    logging.info("store: _path is now %s", _path)
+                    if p in root:
+                        logging.info("store: p %s found in root %s", p, root)
+                        root = directory = root[p]["dir"]
+                        logging.info("store: new root is %s", root)
+                        base = _path
+                    else:
+                        dir = {
+                            "date": str(
+                                datetime.datetime.now().strftime(
+                                    "%b %d %Y %H:%M:%S"
+                                )
+                            ),
+                            "path": _path,
+                            "name": _path,
+                            "id": _path,
+                            "perms": "rwxrwxrwx",
+                            "parent": root,
+                            "type": "directory",
+                            "size": 0,
+                            "dir": BTrees.OOBTree.BTree(),
+                        }
 
-                            logging.info("store: new dir id is %s", dir["dir"])
-                            root[p] = dir
-                            logging.info(
-                                "store: added new dir id %s to current root %s with key %s",
-                                dir,
-                                root,
-                                p,
-                            )
-                            logging.info("store: added dir is %s", root[p])
-                            directory = root = dir["dir"]
+                        logging.info("store: new dir id is %s", dir["dir"])
 
-                            # I created a new directory from a path and need to add it
-                            # to my registry for lookups
-                            self.fs.root.registry[_path] = dir
+                        root[p] = dir
+                        logging.info(
+                            "store: added new dir id %s to current root %s with key %s",
+                            dir,
+                            root,
+                            p,
+                        )
+                        logging.info("store: added dir is %s", root[p])
+                        directory = root = dir["dir"]
 
-                        logging.info("root id is now %s", root)
+                        # I created a new directory from a path and need to add it
+                        # to my registry for lookups
+                        fsroot.registry[_path] = dir
+                    logging.info("root id is now %s", root)
 
-                logging.info("Adding file  %s to directory  [%s]", id, directory)
-                directory[id] = file
+            logging.info("Adding file  %s to directory  [%s]", id, directory)
+            directory[id] = file
 
-                if path[-1] != "/" and len(name) > 0:
-                    self.fs.root.registry[path + "/" + name] = file
-                    logging.info("Adding to registry %s %s", path + "/" + name, file)
+            if path[-1] != "/" and len(name) > 0:
+                fsroot.registry[path + "/" + name] = file
+                logging.info("Adding to registry %s %s", path + "/" + name, file)
 
-                    if not IS_BROKER:
-                        broker = Client(BROKER, "5558")
-                        logging.info("broker object %s", broker)
+                if not IS_BROKER:
+                    broker = Client(BROKER, "5558")
+                    logging.info("broker object %s", broker)
 
-                        # Add my object reference to the brokers directory,
-                        # pointing back to me
-                        broker.register({"path": path + "/" + name})
-                else:
-                    self.fs.root.registry[path + name] = file
-                    logging.info("Adding to registry %s %s", path + name, file)
+                    # Add my object reference to the brokers directory,
+                    # pointing back to me
+                    broker.register({"path": path + "/" + name})
+            else:
+                fsroot.registry[path + name] = file
+                logging.info("Adding to registry %s %s", path + name, file)
 
-                    if not IS_BROKER:
-                        broker = Client(BROKER, "5558")
-                        logging.info("broker object %s", broker)
+                if not IS_BROKER:
+                    broker = Client(BROKER, "5558")
+                    logging.info("broker object %s", broker)
 
-                        # Add my object reference to the brokers directory,
-                        # pointing back to me
-                        broker.register({"path": path + name})
+                    # Add my object reference to the brokers directory,
+                    # pointing back to me
+                    broker.register({"path": path + name})
 
+            transaction.commit()
             logging.info("_OBJ str %s", str(_obj))
             insert_obj = json.loads(str(_obj))
             try:
@@ -592,10 +616,11 @@ class NodeServer(Server):
 
             self.objects.create_search_index("data")
 
-            logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
-            assert self.fs.objects == self.fs.root.objects
+            logging.info("ROOT IS %s", [o for o in fsroot.objects])
+
             # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
-            # logging.info("OBJECTS LENGTH %s", len(self.fs.objects))
+            logging.info("OBJECTS LENGTH %s", len(fsroot.objects))
+            connection.close()
 
         def get_data(self, oid):
             obj: Data = self.fs.objects[oid]

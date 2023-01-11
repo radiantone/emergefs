@@ -59,6 +59,10 @@ class Client:
         _file = dill.loads(file)
         return _file
 
+    def hello(self, query):
+
+        return self.client.hello(query)
+
     def graphql(self, query):
 
         return self.client.graphql(query)
