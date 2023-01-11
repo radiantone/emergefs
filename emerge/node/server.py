@@ -53,6 +53,9 @@ class NodeServer(Server):
             #    """If the path is already created, set the directory to that path"""
             #    self.fs.root.objects["hello"] = ["hello", "there"]
 
+            def rebuild_schema():
+                pass
+
             self.objects = Table("objects")
 
         def graphql(self, query):
@@ -396,6 +399,8 @@ class NodeServer(Server):
 
             fsroot = connection.root()
 
+            # TODO: Move this to the class so it can rebuild the schema
+            # from the objects when it starts up new
             def make_graphql(obj):
                 import json
                 from functools import partial
@@ -511,7 +516,11 @@ class NodeServer(Server):
             import transaction
 
             transaction.begin()
-            _obj.uuid = _uuid
+            if _obj.uuid is None:
+                _obj.uuid = _uuid
+            else:
+                _uuid = _obj.uuid
+
             fsroot.uuids[_uuid] = dill.dumps(_obj)
 
             file = {
