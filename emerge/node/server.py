@@ -317,19 +317,24 @@ class NodeServer(Server):
                             child = self.fs.registry[obj["path"] + "/" + name]
                             logging.info("%s", child)
                             the_obj = self.fs.uuids[child["uuid"]]
-                            _method = getattr(the_obj, method)
-                            results += [_method()]
+
+                            if hasattr(the_obj, method):
+                                _method = getattr(the_obj, method)
+                                results += [_method()]
                         return results
                     else:
                         # the_obj = make_object(obj["class"], obj["obj"])
                         the_obj = self.fs.uuids[obj["uuid"]]
-                        _method = getattr(the_obj, method)
-                        logging.info("Calling method %s on %s", method, the_obj)
-                        # TODO: Execute on the uuid stored object
-                        # obj["obj"] = json.loads(str(the_obj))
-                        result = _method()
-                        logging.info("After calling method %s: %s", method, the_obj)
-                        return result
+
+                        if hasattr(the_obj, method):
+                            _method = getattr(the_obj, method)
+                            logging.info("Calling method %s on %s", method, the_obj)
+                            # obj["obj"] = json.loads(str(the_obj))
+                            result = _method()
+                            logging.info("After calling method %s: %s", method, the_obj)
+                            return result
+                        else:
+                            return None
             except KeyError:
                 return "No such object {}".format(oid)
 

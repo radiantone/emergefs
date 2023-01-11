@@ -3,5 +3,6 @@ query {
     name
     id
     path
+    foo
   }
 }
