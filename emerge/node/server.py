@@ -336,8 +336,8 @@ class NodeServer(Server):
 
                         if hasattr(the_obj, method):
                             _method = getattr(the_obj, method)
-                            fsroot.uuids[child["uuid"]] = dill.dumps(the_obj)
                             results += [_method()]
+                            fsroot.uuids[child["uuid"]] = dill.dumps(the_obj)
                     return results
                 else:
                     the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
@@ -402,6 +402,7 @@ class NodeServer(Server):
 
                 data = json.loads(str(obj))
                 fields = {}
+                fields["uuid"] = graphene.String()
 
                 for key, value in data.items():
                     if type(value) is str:
@@ -413,6 +414,7 @@ class NodeServer(Server):
                     if type(value) is float:
                         fields[key] = graphene.Float()
 
+                logging.info("FIELDS: %s %s", obj.__class__.__name__, fields)
                 item = type(
                     obj.__class__.__name__ + "Resolver", (graphene.ObjectType,), fields
                 )
@@ -444,12 +446,22 @@ class NodeServer(Server):
                     logging.info(
                         "resolver RESULTS %s", [str(result) for result in results]
                     )
+                    _RESULTS = []
                     try:
                         _results = [json.loads(str(result)) for result in results]
                         logging.info(
                             "resolver _results1 %s", [result for result in _results]
                         )
-                        _results = [item(**result) for result in _results]
+                        fobjs = []
+                        for result in _results:
+                            robj = json.loads(
+                                str(dill.loads(fsroot.uuids[result["uuid"]]))
+                            )
+                            logging.info("R %s", robj)
+                            fobjs += [robj]
+
+                        logging.info("FOBJS %s", fobjs)
+                        _results = [item(**result) for result in fobjs]
                     except Exception as ex:
                         logging.error(ex)
                     logging.info("resolver _results2 %s", _results)
@@ -479,18 +491,18 @@ class NodeServer(Server):
                 query = type(obj.__class__.__name__ + "Query", (QueryClass,), qfields)
                 logging.info("make_grapql: query: %s", query)
 
-                self.schema = graphene.Schema(query=query)
+                schema = graphene.Schema(query=query)
                 logging.info(
                     "make_graphql: schema %s %s ::%s:: %s",
-                    self.schema,
+                    schema,
                     item,
                     item.name,
                     fields,
                 )
 
-                return fields
+                return fields, schema
 
-            _fields = make_graphql(_obj)
+            _fields, self.schema = make_graphql(_obj)
 
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
             fsroot.classes[_obj.__class__.__name__] = _obj.__class__
@@ -499,6 +511,7 @@ class NodeServer(Server):
             import transaction
 
             transaction.begin()
+            _obj.uuid = _uuid
             fsroot.uuids[_uuid] = dill.dumps(_obj)
 
             file = {
@@ -599,16 +612,22 @@ class NodeServer(Server):
 
             transaction.commit()
             logging.info("_OBJ str %s", str(_obj))
-            insert_obj = json.loads(str(_obj))
+            # insert_obj = json.loads(str(_obj))
+            # insert_obj["uuid"] = _uuid
             try:
                 self.objects.insert(_obj)
             except KeyError:
-                self.objects.delete(id=insert_obj["id"])
+                self.objects.delete(id=_uuid)
                 self.objects.insert(_obj)
+
+            try:
+                self.objects.create_index("uuid", unique=True)
+            except:
+                pass
 
             for key in _fields.keys():
                 try:
-                    self.objects.create_index(key, unique=key == "id")
+                    self.objects.create_index(key, unique=False)
                 except:
                     pass
 

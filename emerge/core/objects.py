@@ -45,6 +45,7 @@ class EmergeFile(EmergeObject):
     perms: str = "rwxrwxrwx"
     type: str = "file"
     data: str = ""
+    uuid: str = ""
 
     def __str__(self):
         import json
