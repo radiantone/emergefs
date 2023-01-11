@@ -18,7 +18,7 @@ emerge code /inventory/widget1
 emerge search data data
 emerge search
 python emerge/example/proxy.py
-emerge graphql
+emerge graphql "$(cat query3.json)"
 emerge rm /inventory/widget1
 emerge rm /inventory/widget2
 emerge rm /inventory/widget3

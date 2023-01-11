@@ -35,11 +35,11 @@ class Z0DBFileSystem(FileSystem):
         storage = ZODB.FileStorage.FileStorage("emerge.fs")
         db = self.db = ZODB.DB(storage)
         self.connection = db.open()
-        #self.root.hello = "".join(["there" for i in range(0,100)])
+        # self.root.hello = "".join(["there" for i in range(0,100)])
         self.root = self.connection.root()
         logging.info("self.root %s", self.root)
         try:
-            #transaction.commit()
+            # transaction.commit()
             logging.info("self.root len %d", len(self.root))
         except Exception as ex:
             logging.error(ex)

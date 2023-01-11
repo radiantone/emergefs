@@ -49,7 +49,7 @@ class NodeServer(Server):
             self.fs.registry["/hello"] = {"status": "ok", "message": "hello there"}
 
             logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
-            #with self.fs.session():
+            # with self.fs.session():
             #    """If the path is already created, set the directory to that path"""
             #    self.fs.root.objects["hello"] = ["hello", "there"]
 
@@ -68,6 +68,7 @@ class NodeServer(Server):
             logging.info("HELLO FROM {}".format(address))
             connection = self.fs.db.open()
             import transaction
+
             transaction.begin()
             root = connection.root()
             transaction.commit()
@@ -111,7 +112,7 @@ class NodeServer(Server):
             obj = fsroot.registry[path]
             logging.info("getobject: object %s", obj)
 
-            logging.info("uuids %s",[uuid for uuid in fsroot.uuids])
+            logging.info("uuids %s", [uuid for uuid in fsroot.uuids])
             the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
             if nodill:
                 return the_obj
@@ -120,10 +121,7 @@ class NodeServer(Server):
                 return dill.dumps(the_obj)
 
             elif obj["type"] == "directory":
-                return [
-                    dill.dumps(fsroot.uuids[obj["uuid"]])
-                    for o in obj["dir"]
-                ]
+                return [dill.dumps(fsroot.uuids[obj["uuid"]]) for o in obj["dir"]]
 
         def get(self, path, page=0, size=-1):
 
@@ -397,6 +395,7 @@ class NodeServer(Server):
             connection = self.fs.db.open()
 
             fsroot = connection.root()
+
             def make_graphql(obj):
                 import json
                 from functools import partial
@@ -498,6 +497,7 @@ class NodeServer(Server):
             _uuid = str(uuid4())
 
             import transaction
+
             transaction.begin()
             fsroot.uuids[_uuid] = dill.dumps(_obj)
 
@@ -542,9 +542,7 @@ class NodeServer(Server):
                     else:
                         dir = {
                             "date": str(
-                                datetime.datetime.now().strftime(
-                                    "%b %d %Y %H:%M:%S"
-                                )
+                                datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")
                             ),
                             "path": _path,
                             "name": _path,
