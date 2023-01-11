@@ -1,5 +1,5 @@
 query {
-  InventoryItem(name: "widget12") {
+  InventoryItem(name: "widget2") {
     name
     id
     path

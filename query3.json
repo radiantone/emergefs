@@ -3,6 +3,7 @@ query {
     name
     id
     path
-    foo
+    uuid
+    totalcost
   }
 }
