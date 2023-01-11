@@ -28,6 +28,10 @@ if not IS_BROKER:
     logging.info("Contacted broker...")
 
 
+class QueryClass(graphene.ObjectType):
+    pass
+
+
 class NodeServer(Server):
     """Node server"""
 
@@ -48,15 +52,39 @@ class NodeServer(Server):
             self.fs.start()
             self.fs.registry["/hello"] = {"status": "ok", "message": "hello there"}
 
-            logging.info("ROOT IS %s", [o for o in self.fs.root.objects])
+            connection = self.fs.db.open()
+
+            fsroot = connection.root()
+            logging.info("ROOT IS %s", [o for o in fsroot])
             # with self.fs.session():
             #    """If the path is already created, set the directory to that path"""
             #    self.fs.root.objects["hello"] = ["hello", "there"]
-
-            def rebuild_schema():
-                pass
+            self.schemas = {}
 
             self.objects = Table("objects")
+            for oid in fsroot.uuids:
+                _obj = dill.loads(fsroot.uuids[oid])
+                logging.info("Building schema for %s", _obj.__class__)
+                _fields, self.schema = self.make_graphql(_obj)
+
+                self.schemas[_obj.__class__.__name__] = self.schema
+
+                try:
+                    self.objects.insert(_obj)
+                except KeyError:
+                    self.objects.delete(id=oid)
+                    self.objects.insert(_obj)
+
+                try:
+                    self.objects.create_index("uuid", unique=True)
+                except:
+                    pass
+
+                for key in _fields.keys():
+                    try:
+                        self.objects.create_index(key, unique=False)
+                    except:
+                        pass
 
         def graphql(self, query):
             import json
@@ -386,6 +414,106 @@ class NodeServer(Server):
             logging.info("SEARCH %s", _results)
             return _results
 
+        def make_graphql(self, obj):
+            import json
+            from functools import partial
+
+            data = json.loads(str(obj))
+            fields = {}
+            fields["uuid"] = graphene.String()
+
+            for key, value in data.items():
+                if type(value) is str:
+                    fields[key] = graphene.String()
+
+                if type(value) is int:
+                    fields[key] = graphene.Int()
+
+                if type(value) is float:
+                    fields[key] = graphene.Float()
+
+            logging.info("FIELDS: %s %s", obj.__class__.__name__, fields)
+            item = type(
+                obj.__class__.__name__ + "Resolver", (graphene.ObjectType,), fields
+            )
+            setattr(graphene.types.objecttype, item.__name__, item)
+
+            def resolver(root, info, **kwargs):
+                import json
+
+                connection = self.fs.db.open()
+
+                fsroot = connection.root()
+                logging.info("resolve_widget: kwargs %s %s", info.field_name, kwargs)
+
+                # use search indices
+                def search_func(o):
+                    logging.info("search_func: %s %s", o, kwargs)
+                    for key, val in kwargs.items():
+                        if val:
+                            value = getattr(o, key)
+                            logging.info("search_func: val %s value %s", val, value)
+                            if value != val:
+                                logging.info("search_func: returning False")
+                                return False
+                    logging.info("search_func: returning True")
+                    return True
+
+                results = self.objects.where(search_func)
+                logging.info("resolver RESULTS %s", [str(result) for result in results])
+
+                try:
+                    _results = [json.loads(str(result)) for result in results]
+                    logging.info(
+                        "resolver _results1 %s", [result for result in _results]
+                    )
+                    fobjs = []
+                    for result in _results:
+                        robj = json.loads(str(dill.loads(fsroot.uuids[result["uuid"]])))
+                        logging.info("R %s", robj)
+                        fobjs += [robj]
+
+                    logging.info("FOBJS %s", fobjs)
+                    _results = [item(**result) for result in fobjs]
+                except Exception as ex:
+                    logging.error(ex)
+                logging.info("resolver _results2 %s", _results)
+
+                if info.field_name.find("List") >= 0:
+                    return _results
+                else:
+                    return _results[0]
+
+            qfields = {}
+            qfields[obj.__class__.__name__] = graphene.Field(item, **fields)
+            qfields[obj.__class__.__name__ + "List"] = graphene.List(item)
+            params = {}
+
+            for key in fields.keys():
+                params[key] = None
+
+            logging.info("make_grapql: params: %s", params)
+            qfields["resolve_" + obj.__class__.__name__] = partial(resolver, **params)
+            qfields["resolve_" + obj.__class__.__name__ + "List"] = partial(
+                resolver, **params
+            )
+            logging.info("make_grapql: fields: %s", fields)
+            logging.info("make_grapql: qfields: %s", qfields)
+            query = type(obj.__class__.__name__ + "Query", (QueryClass,), qfields)
+            setattr(graphene.types.objecttype, query.__name__, query)
+            logging.info("make_grapql: query: %s", query)
+
+            schema = graphene.Schema(query=query)
+            logging.info(
+                "make_graphql: schema %s %s ::%s:: %s",
+                schema,
+                item,
+                item.name,
+                fields,
+            )
+
+            return fields, schema
+
         def store(self, id, path, name, source, obj):
             import datetime
             import json
@@ -393,6 +521,7 @@ class NodeServer(Server):
 
             import BTrees.OOBTree
             import dill
+            import transaction
 
             _obj = dill.loads(obj)
             connection = self.fs.db.open()
@@ -401,122 +530,21 @@ class NodeServer(Server):
 
             # TODO: Move this to the class so it can rebuild the schema
             # from the objects when it starts up new
-            def make_graphql(obj):
-                import json
-                from functools import partial
 
-                data = json.loads(str(obj))
-                fields = {}
-                fields["uuid"] = graphene.String()
+            _fields, self.schema = self.make_graphql(_obj)
 
-                for key, value in data.items():
-                    if type(value) is str:
-                        fields[key] = graphene.String()
-
-                    if type(value) is int:
-                        fields[key] = graphene.Int()
-
-                    if type(value) is float:
-                        fields[key] = graphene.Float()
-
-                logging.info("FIELDS: %s %s", obj.__class__.__name__, fields)
-                item = type(
-                    obj.__class__.__name__ + "Resolver", (graphene.ObjectType,), fields
-                )
-
-                class QueryClass(graphene.ObjectType):
-                    pass
-
-                def resolver(root, info, **kwargs):
-                    import json
-
-                    logging.info(
-                        "resolve_widget: kwargs %s %s", info.field_name, kwargs
-                    )
-
-                    # use search indices
-                    def search_func(o):
-                        logging.info("search_func: %s %s", o, kwargs)
-                        for key, val in kwargs.items():
-                            if val:
-                                value = getattr(o, key)
-                                logging.info("search_func: val %s value %s", val, value)
-                                if value != val:
-                                    logging.info("search_func: returning False")
-                                    return False
-                        logging.info("search_func: returning True")
-                        return True
-
-                    results = self.objects.where(search_func)
-                    logging.info(
-                        "resolver RESULTS %s", [str(result) for result in results]
-                    )
-                    _RESULTS = []
-                    try:
-                        _results = [json.loads(str(result)) for result in results]
-                        logging.info(
-                            "resolver _results1 %s", [result for result in _results]
-                        )
-                        fobjs = []
-                        for result in _results:
-                            robj = json.loads(
-                                str(dill.loads(fsroot.uuids[result["uuid"]]))
-                            )
-                            logging.info("R %s", robj)
-                            fobjs += [robj]
-
-                        logging.info("FOBJS %s", fobjs)
-                        _results = [item(**result) for result in fobjs]
-                    except Exception as ex:
-                        logging.error(ex)
-                    logging.info("resolver _results2 %s", _results)
-
-                    if info.field_name.find("List") >= 0:
-                        return _results
-                    else:
-                        return _results[0]
-
-                qfields = {}
-                qfields[obj.__class__.__name__] = graphene.Field(item, **fields)
-                qfields[obj.__class__.__name__ + "List"] = graphene.List(item)
-                params = {}
-
-                for key in fields.keys():
-                    params[key] = None
-
-                logging.info("make_grapql: params: %s", params)
-                qfields["resolve_" + obj.__class__.__name__] = partial(
-                    resolver, **params
-                )
-                qfields["resolve_" + obj.__class__.__name__ + "List"] = partial(
-                    resolver, **params
-                )
-                logging.info("make_grapql: fields: %s", fields)
-                logging.info("make_grapql: qfields: %s", qfields)
-                query = type(obj.__class__.__name__ + "Query", (QueryClass,), qfields)
-                logging.info("make_grapql: query: %s", query)
-
-                schema = graphene.Schema(query=query)
-                logging.info(
-                    "make_graphql: schema %s %s ::%s:: %s",
-                    schema,
-                    item,
-                    item.name,
-                    fields,
-                )
-
-                return fields, schema
-
-            _fields, self.schema = make_graphql(_obj)
+            self.schemas[_obj.__class__.__name__] = self.schema
 
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
-            fsroot.classes[_obj.__class__.__name__] = _obj.__class__
+            transaction.begin()
+            fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
+            transaction.commit()
             _uuid = str(uuid4())
 
             import transaction
 
             transaction.begin()
-            if _obj.uuid is None:
+            if _obj.uuid is None or len(_obj.uuid) == 0:
                 _obj.uuid = _uuid
             else:
                 _uuid = _obj.uuid
