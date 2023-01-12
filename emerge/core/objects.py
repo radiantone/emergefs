@@ -49,17 +49,25 @@ class EmergeFile(EmergeObject):
 
     def __str__(self):
         import json
+        from types import ModuleType
 
-        return json.dumps(
-            {
-                "name": self.name,
-                "path": self.path,
-                "id": self.id,
-                "perms": self.perms,
-                "type": self.type,
-                "data": self.data,
-            }
-        )
+        import persistent.list
+
+        ser = {}
+
+        for i in [
+            v
+            for v in dir(self)
+            if not callable(getattr(self, v))
+            and v[0] != "_"
+            and isinstance(getattr(self, v), ModuleType) is False
+        ]:
+            if isinstance(getattr(self, i), persistent.list.PersistentList):
+                ser[i] = [str(o) for o in getattr(self, i)]
+            else:
+                ser[i] = getattr(self, i)
+
+        return json.dumps(ser)
 
 
 class FileSystem(Server):

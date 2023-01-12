@@ -120,39 +120,50 @@ class NodeServer(Server):
             return {"registry": registry, "host": platform.node()}
 
         def query(self, path, page=0, size=-1):
+            import transaction
+
             connection = self.fs.db.open()
 
             fsroot = connection.root()
+            logging.info("CALLING QUERY")
             obj = self.getobject(path, True)
+            logging.info("GET RESULTS %s", obj.results)
             logging.info("query: obj %s %s", obj, type(obj))
-            logging.info("fs.objects %s", fsroot.objects)
             if hasattr(obj, "query"):
                 # Object implements query method and receives the database reference
                 # From there, the query method can scan the database and build a list of
                 # results
-                logging.info("CALLING QUERY ON %s", obj)
-                return obj.query(self)
+                transaction.begin()
+                r = obj.query(self)
+                fsroot.uuids[obj.uuid] = dill.dumps(obj)
+                transaction.commit()
+                return r
 
         def getobject(self, path, nodill, page=0, size=-1):
 
             connection = self.fs.db.open()
 
             fsroot = connection.root()
-            logging.info("getobject: path = %s", path)
+            try:
+                logging.info("getobject: path = %s", path)
 
-            obj = fsroot.registry[path]
-            logging.info("getobject: object %s", obj)
+                obj = fsroot.registry[path]
+                logging.info("getobject: object %s", obj)
 
-            logging.info("uuids %s", [uuid for uuid in fsroot.uuids])
-            the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
-            if nodill:
-                return the_obj
+                logging.info("uuids %s", [uuid for uuid in fsroot.uuids])
+                if nodill:
+                    the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
+                    return the_obj
 
-            if obj["type"] == "file":
-                return dill.dumps(the_obj)
+                if obj["type"] == "file":
+                    the_obj = fsroot.uuids[obj["uuid"]]
+                    logging.info("getobject: return file %s", dill.loads(the_obj))
+                    return the_obj
 
-            elif obj["type"] == "directory":
-                return [dill.dumps(fsroot.uuids[obj["uuid"]]) for o in obj["dir"]]
+                elif obj["type"] == "directory":
+                    return [dill.dumps(fsroot.uuids[o["uuid"]]) for o in obj["dir"]]
+            finally:
+                connection.close()
 
         def get(self, path, page=0, size=-1):
 

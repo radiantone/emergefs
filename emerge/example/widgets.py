@@ -23,24 +23,6 @@ class InventoryItem(EmergeFile):
         self.totalcost = self.unit_price * self.quantity_on_hand
         return self.totalcost
 
-    def __str__(self):
-        import json
-
-        return json.dumps(
-            {
-                "name": self.name,
-                "path": self.path,
-                "id": self.id,
-                "totalcost": self.totalcost,
-                "unit_price": self.unit_price,
-                "quantity_on_hand": self.quantity_on_hand,
-                "perms": self.perms,
-                "type": self.type,
-                "uuid": self.uuid,
-                "data": self.data,
-            }
-        )
-
 
 client = Client("0.0.0.0", "5558")
 

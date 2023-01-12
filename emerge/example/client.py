@@ -40,22 +40,6 @@ class InventoryItem(EmergeFile):
     def total_cost(self) -> float:
         return self.unit_price * self.quantity_on_hand
 
-    def __str__(self):
-        import json
-
-        return json.dumps(
-            {
-                "name": self.name,
-                "path": self.path,
-                "id": self.id,
-                "unit_price": self.unit_price,
-                "quantity_on_hand": self.quantity_on_hand,
-                "perms": self.perms,
-                "type": self.type,
-                "data": self.data,
-            }
-        )
-
 
 """ Here we create a custom object with some data and store/retrieve it.
 We do this because we will be asking the network to perform batch calculations on

@@ -271,6 +271,7 @@ Output
 ```
 ### Using Object Proxies
 Emerge can proxy an object you created on-the-fly and stored in the filesystem so you can invoke methods on it directly, rather than using the `client` object to execute methods.
+```python
 from emerge.core.client import Client
 
 client = Client("0.0.0.0", "5558")
@@ -294,6 +295,86 @@ for result in query.results:
     print(result)
     print(round(result.total_cost(), 1))
 ```
+
+### GraphQL queries
+`emerge` will automatically create the required GraphQL schemas and resolvers for your objects!
+
+Given the following class you create an object and insert into the filesystem.
+```python
+from dataclasses import dataclass
+
+from emerge.core.client import Client
+from emerge.core.objects import EmergeFile
+
+
+@dataclass
+class InventoryItem(EmergeFile):
+    """Class for keeping track of an item in inventory."""
+
+    unit_price: float = 0.0
+    quantity_on_hand: int = 0
+    totalcost: float = 0
+    foo: str = "FOO"
+
+    def run(self):
+        return "total cost:{}".format(self.total_cost())
+
+    def total_cost(self) -> float:
+        import logging
+
+        logging.debug("InventoryItem: total_cost executing")
+        self.totalcost = self.unit_price * self.quantity_on_hand
+        return self.totalcost
+
+
+client = Client("0.0.0.0", "5558")
+
+item = InventoryItem(
+    id="widget1",
+    name="widget1",
+    path="/inventory",
+    unit_price=3.0,
+    quantity_on_hand=10,
+    data="A widget{} data".format(1),
+)
+client.store(item)
+```
+Once `emerge` as received and stored your custom object/class it will generate the GraphQL artifacts needed to query it.
+Internally, `emerge` creates and maintains optimize indicies over your custom object fields dynamically, making it super-fast to execute queries in memory.
+Then issue a GraphQL query to find it
+```bash
+
+$ cat query1.json 
+query {
+  InventoryItem(name: "widget1") {
+    name
+    id
+    path
+  }
+}
+$ emerge graphql "$(cat query1.json)"
+{'InventoryItem': {'name': 'widget1', 'id': 'widget1', 'path': '/inventory'}}
+$ cat query3.json 
+query {
+  InventoryItemList {
+    name
+    id
+    path
+    uuid
+    totalcost
+  }
+}
+$ emerge graphql "$(cat query3.json)"
+{'InventoryItemList': [{'name': 'widget8', 'id': 'widget8', 'path': '/inventory', 'uuid': '3fd460a1-07a7-4a3a-8804-87ef0c4cee4f', 'totalcost': 0.0}, 
+{'name': 'widget3', 'id': 'widget3', 'path': '/inventory', 'uuid': '4d7d8d2d-2811-4444-a098-ac1c652073f7', 'totalcost': 0.0}, 
+{'name': 'widget9', 'id': 'widget9', 'path': '/inventory', 'uuid': '8b8c4a11-1e01-4a9f-9070-9ea31e18240d', 'totalcost': 0.0}, 
+{'name': 'widget4', 'id': 'widget4', 'path': '/inventory', 'uuid': '8ba02fc6-5d59-4b03-ae2a-2f4807acb879', 'totalcost': 0.0}, 
+{'name': 'query1', 'id': 'query1', 'path': '/queries', 'uuid': 'b2e188fe-e693-4338-a619-71e8d9fa6690', 'totalcost': None}, 
+{'name': 'widget1', 'id': 'widget1', 'path': '/inventory', 'uuid': 'c959c600-9404-4d94-b8d4-135b8e631da1', 'totalcost': 0.0}, 
+{'name': 'query1', 'id': 'query1', 'path': '/queries', 'uuid': 'd7ab0d1f-7bf7-4962-9d34-d92bb3ff7069', 'totalcost': None}
+
+```
+
 ## Running a Node
 
 ```bash
