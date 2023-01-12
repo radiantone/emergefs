@@ -14,6 +14,7 @@ class QueryFile(EmergeFile):
         """This only runs on the server and receives the filesystem object to traverse"""
         import json
 
+        self.results = []
         objs = fs.list("/inventory", True)
         for oid in objs:
             obj = fs.getobject(oid, True)

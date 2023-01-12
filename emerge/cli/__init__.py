@@ -87,7 +87,7 @@ def start(context, port):
 @click.argument("query", required=False, default=None)
 @click.pass_context
 def search(context, field, query):
-    """Search for objects"""
+    """Search for objects by their field data"""
 
     client = context.obj["client"]
 
@@ -105,18 +105,8 @@ def search(context, field, query):
 @cli.command()
 @click.argument("query", required=False, default=None)
 @click.pass_context
-def hello(context, query):
-    """Say hello"""
-    client = context.obj["client"]
-
-    print(client.hello(query))
-
-
-@cli.command()
-@click.argument("query", required=False, default=None)
-@click.pass_context
 def graphql(context, query):
-    """graphql call"""
+    """Query using graphql"""
     client = context.obj["client"]
 
     print(client.graphql(query))
@@ -126,7 +116,7 @@ def graphql(context, query):
 @click.argument("path")
 @click.pass_context
 def rm(context, path):
-    """Remove an object"""
+    """Remove an object or directory"""
 
     client = context.obj["client"]
 
