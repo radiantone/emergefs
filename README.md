@@ -213,6 +213,27 @@ class InventoryItem(EmergeFile):
 
 ### Querying the Filesystem
 
+#### Query With a Lambda
+`emerge` doesn't have a DSL query language, it uses `plain-old-python`! This removes a lot of layers, mappings, serializers and other complexities used between traditional SQL databases, ORMs, objects etc.
+Simpler is better!
+```python
+from emerge.core.client import Client
+
+client = Client("0.0.0.0", "5558")
+
+results = client.search(lambda o: hasattr(o, 'unit_price') and o.unit_price < 3.5)
+print(results)
+```
+```bash
+['{"data": "A widget1 data", "id": "widget1", "name": "widget1", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 10, "totalcost": 0.0, "type": "file", "unit_price": 3.0, "uuid": "c959c600-9404-4d94-b8d4-135b8e631da1"}', 
+'{"data": "A widget1 data", "id": "widget1", "name": "widget1", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 10, "totalcost": 0.0, "type": "file", "unit_price": 3.0, "uuid": "ec7a3450-c02e-4405-a522-55f56c48106f"}', 
+'{"data": "A widget2 data", "id": "widget2", "name": "widget2", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 11, "totalcost": 0.0, "type": "file", "unit_price": 3.4092252235237934, "uuid": "86b6802a-5fad-4305-95ec-ae56c7e1d1ee"}', 
+'{"data": "A widget3 data", "id": "widget3", "name": "widget3", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 26, "totalcost": 0.0, "type": "file", "unit_price": 3.2701771680050653, "uuid": "157676d2-80fc-4737-a895-a3ed69809fa6"}', 
+'{"data": "A widget1 data", "id": "widget1", "name": "widget1", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 10, "totalcost": 0.0, "type": "file", "unit_price": 3.0, "uuid": "57c2dc38-beef-461e-b77b-a736656a2a61"}']
+
+```
+#### Using a QueryObject
+
 Given the following object with a defined `query` method, using the `query` command will invoke the query method passing in a reference to the filesystem for the method to query.
 
 ```python
@@ -239,6 +260,8 @@ Invoke the query object
 $ emerge query /queries/query1
 [{"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}, {"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}, {"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}, {"name": "widget1", "path": "/inventory", "id": "widget1", "unit_price": 3.0, "quantity_on_hand": 10, "perms": "rwxrwxrwx", "type": "file", "data": "A widget1 data"}, {"name": "widget2", "path": "/inventory", "id": "widget2", "unit_price": 14.470011665792036, "quantity_on_hand": 30, "perms": "rwxrwxrwx", "type": "file", "data": "A widget2 data"}, {"name": "widget3", "path": "/inventory", "id": "widget3", "unit_price": 10.57263472290883, "quantity_on_hand": 13, "perms": "rwxrwxrwx", "type": "file", "data": "A widget3 data"}]
 ```
+
+#### Retrieving Stored Results Later
 
 The query class may retain the results as in the example above. This way, another client can simply request the currently stored results without re-executing the query
 

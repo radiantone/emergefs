@@ -422,6 +422,7 @@ class NodeServer(Server):
 
             for result in results:
                 _results += [str(result)]
+
             logging.info("SEARCH %s", _results)
             return _results
 
