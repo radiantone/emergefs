@@ -17,7 +17,7 @@ services:
       - emerge
     volumes:
       - .:/opt/emerge/code
-      - ./data:/opt/emerge/data/broker
+      - ./data/broker:/opt/emerge/data
 
   emerge2:
     image: radiantone/emerge:latest
@@ -38,7 +38,7 @@ services:
       - emerge
     volumes:
       - .:/opt/emerge/code
-      - ./data:/opt/emerge/data/node2
+      - ./data/node2:/opt/emerge/data
 
 networks:
   emerge: {}
