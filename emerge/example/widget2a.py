@@ -24,11 +24,11 @@ class InventoryItem(EmergeFile):
         return self.totalcost
 
 
-client = Client("0.0.0.0", "5558")
+client = Client("0.0.0.0", "5559")
 
 item = InventoryItem(
-    id="widget1",
-    name="widget1",
+    id="widget2a",
+    name="widget2a",
     path="/inventory",
     unit_price=3.0,
     quantity_on_hand=10,

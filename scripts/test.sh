@@ -19,6 +19,13 @@ emerge search data data
 emerge search
 python emerge/example/proxy.py
 emerge graphql "$(cat query3.json)"
+
+python emerge/example/widget2a.py
+emerge -h localhost:5559 ls -l
+emerge -h localhost:5559 ls -l /inventory
+emerge -h localhost:5559 cat /inventory/widget2a
+
+
 emerge rm /inventory/widget1
 emerge rm /inventory/widget2
 emerge rm /inventory/widget3
