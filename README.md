@@ -415,3 +415,11 @@ $ emerge --debug node start
 2022-08-31 10:48:34,325 : zerorpc.events DEBUG : bound to tcp://0.0.0.0:5558 (status=<SocketContext(bind='tcp://0.0.0.0:5558')>)
 
 ```
+
+### Using Docker Compose
+`emerge` comes with a docker compose file to run a broker node and a secondary node.
+```bash
+$ make up
+$ make down
+$ make clean
+```

@@ -43,6 +43,18 @@ update: format lint
 	python setup.py install
 	git status
 
+.PHONY: build
+build:
+	docker compose build
+
+.PHONY: up
+up: build
+	docker compose up
+
+.PHONY: down
+down:
+	docker compose stop
+
 .PHONY: docs
 docs:
 	cd docs
@@ -50,6 +62,8 @@ docs:
 
 .PHONY: clean
 clean:
+	rm -rf data/broker/*
+	rm -rf data/node2/*
 	python setup.py clean
 	git status
 

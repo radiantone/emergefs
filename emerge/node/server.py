@@ -63,7 +63,10 @@ class NodeServer(Server):
 
             self.objects = Table("objects")
             for oid in fsroot.uuids:
-                _obj = dill.loads(fsroot.uuids[oid])
+                if type(fsroot.uuids[oid]) is dict:
+                    _obj = fsroot.uuids[oid]
+                else:
+                    _obj = dill.loads(fsroot.uuids[oid])
                 logging.info("Building schema for %s", _obj.__class__)
                 _fields, self.schema = self.make_graphql(_obj)
 
