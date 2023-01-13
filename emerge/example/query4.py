@@ -19,7 +19,7 @@ class QueryFile(EmergeFile):
             if obj.unit_price < 15:
                 self.results.append(obj)
 
-        return json.dumps([json.loads(str(result)) for result in self.results])
+        return [str(result) for result in self.results]
 
 
 query = QueryFile(id="query1", name="query1", path="/queries", data="A query object")
