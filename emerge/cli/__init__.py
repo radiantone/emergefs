@@ -28,8 +28,9 @@ def human_readable_size(size, decimal_places=2):
 
 @click.group(invoke_without_command=True)
 @click.option("--debug", is_flag=True, default=False, help="Debug switch")
+@click.option("-h", "--host",  default=None, help="hostname:port for node")
 @click.pass_context
-def cli(context, debug):
+def cli(context, debug, host):
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
@@ -50,15 +51,18 @@ def cli(context, debug):
 
     context.obj = {}
 
-    if os.path.exists("emerge.ini"):
-        config = configparser.ConfigParser()
-        context.obj["config"] = config.read("emerge.ini")
-        client = Client(config.get("emerge", "host"), config.get("emerge", "port"))
+    if host is not None:
+        splits = host.split(':')
+        context.obj["client"] = Client(splits[0], splits[1])
     else:
+        if os.path.exists("emerge.ini"):
+            config = configparser.ConfigParser()
+            context.obj["config"] = config.read("emerge.ini")
+            client = Client(config.get("emerge", "host"), config.get("emerge", "port"))
+        else:
+            client = Client("0.0.0.0", "5558")
 
-        client = Client("0.0.0.0", "5558")
-
-    context.obj["client"] = client
+        context.obj["client"] = client
     logging.debug("Debug ON")
     if len(sys.argv) == 1:
         click.echo(context.get_help())
@@ -229,6 +233,9 @@ def ls(context, long, directory):
             if type(file) is list:
                 pass
             else:
+                if 'error' in file and file['error']:
+                    click.echo(file['message'])
+                    return
                 row = "{} {: <8} {: >10} {} {: <10}".format(
                     file["perms"],
                     human_readable_size(file["size"], 1)

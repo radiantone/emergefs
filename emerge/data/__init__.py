@@ -2,6 +2,7 @@ import dataclasses
 import json
 from dataclasses import dataclass
 from typing import Any
+import datetime
 
 from persistent import Persistent
 
@@ -18,6 +19,7 @@ class EmergeData(Persistent):
 
     id: str
     data: Any
+    date: str = str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S"))
 
     def __str__(self):
         # return json.dumps(self, indent=4, cls=EnhancedJSONEncoder)

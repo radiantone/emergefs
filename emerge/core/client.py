@@ -56,7 +56,10 @@ class Client:
 
     def getobject(self, path, nodill, offset=0, size=0):
         file = self.client.getobject(path, nodill, offset=offset, size=size)
-        _file = dill.loads(file)
+        if type(file) is dict:
+            return file
+        else:
+            _file = dill.loads(file)
         return _file
 
     def hello(self, query):

@@ -24,7 +24,7 @@ class InventoryItem(EmergeFile):
         return self.totalcost
 
 
-client = Client("0.0.0.0", "5558")
+client = Client("0.0.0.0", "5559")
 
 item = InventoryItem(
     id="widget1",

@@ -13,6 +13,7 @@ from emerge.compute import Data
 from emerge.core.client import Client
 from emerge.core.objects import Server
 from emerge.fs.filesystem import FileSystemFactory
+from emerge.core.objects import EmergeFile
 
 IS_BROKER = "ISBROKER" in os.environ
 
@@ -157,7 +158,12 @@ class NodeServer(Server):
 
                 if obj["type"] == "file":
                     the_obj = fsroot.uuids[obj["uuid"]]
-                    logging.info("getobject: return file %s", dill.loads(the_obj))
+                    logging.info("getobject: return file %s", obj)
+                    return the_obj
+
+                if obj["type"] == "node":
+                    the_obj = fsroot.uuids[obj["uuid"]]
+                    logging.info("getobject: return file %s", the_obj)
                     return the_obj
 
                 elif obj["type"] == "directory":
@@ -752,7 +758,11 @@ class NodeServer(Server):
 
         def get_messages():
             import os
+            import json
+            import transaction
+            from uuid import uuid4
             import platform
+            import datetime
 
             """Listen for pub/sub messages"""
             self.context = zmq.Context()
@@ -780,6 +790,10 @@ class NodeServer(Server):
                 parts = string.split(" ")
 
                 if parts[1] == "HI":
+
+                    connection = self.api.fs.db.open()
+
+                    fsroot = connection.root()
                     client = zerorpc.Client()
                     client.connect(parts[3])
                     client.hello("tcp://{}:{}".format(platform.node(), self.rpcport))
@@ -789,6 +803,27 @@ class NodeServer(Server):
                         # Get registry from parts[3]
                         node = {"address": parts[3]}
                         self.api.fs.nodes[parts[3]] = node
+                        try:
+                            self.api.mkdir("/nodes")
+                        except:
+                            pass
+
+                        file = EmergeFile(id=host)
+                        file.type = "node"
+                        file.name = host
+                        file.path = "/nodes/"+host
+                        file.size = 0
+                        file.uuid = str(uuid4())
+                        file.id = parts[3]
+
+                        nodes = fsroot.registry["/nodes"]["dir"]
+                        if "/nodes/"+host not in nodes:
+                            nodes["/nodes/"+host] = json.loads(str(file))
+
+                        fsroot.registry["/nodes/"+host] = json.loads(str(file))
+                        fsroot.uuids[file.uuid] = json.loads(str(file))
+                        logging.info("STORED /NODES dir %s", json.loads(str(file)))
+                        transaction.commit()
 
                         registry = client.registry()
                         logging.info("REGISTRY[%s] %s", parts[3], registry)
