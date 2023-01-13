@@ -28,7 +28,7 @@ def human_readable_size(size, decimal_places=2):
 
 @click.group(invoke_without_command=True)
 @click.option("--debug", is_flag=True, default=False, help="Debug switch")
-@click.option("-h", "--host",  default=None, help="hostname:port for node")
+@click.option("-h", "--host", default=None, help="hostname:port for node")
 @click.pass_context
 def cli(context, debug, host):
     for handler in logging.root.handlers[:]:
@@ -52,7 +52,7 @@ def cli(context, debug, host):
     context.obj = {}
 
     if host is not None:
-        splits = host.split(':')
+        splits = host.split(":")
         context.obj["client"] = Client(splits[0], splits[1])
     else:
         if os.path.exists("emerge.ini"):
@@ -233,8 +233,8 @@ def ls(context, long, directory):
             if type(file) is list:
                 pass
             else:
-                if 'error' in file and file['error']:
-                    click.echo(file['message'])
+                if "error" in file and file["error"]:
+                    click.echo(file["message"])
                     return
                 row = "{} {: <8} {: >10} {} {: <10}".format(
                     file["perms"],

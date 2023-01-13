@@ -11,9 +11,8 @@ from littletable import Table
 
 from emerge.compute import Data
 from emerge.core.client import Client
-from emerge.core.objects import Server
+from emerge.core.objects import EmergeFile, Server
 from emerge.fs.filesystem import FileSystemFactory
-from emerge.core.objects import EmergeFile
 
 IS_BROKER = "ISBROKER" in os.environ
 
@@ -231,6 +230,7 @@ class NodeServer(Server):
                 raise Exception("Path {} already exists".format(path))
             except KeyError:
                 import datetime
+
                 import transaction
 
                 logging.info("mkdir: making new path is %s", path)
@@ -757,12 +757,12 @@ class NodeServer(Server):
             s.run()
 
         def get_messages():
-            import os
             import json
-            import transaction
-            from uuid import uuid4
+            import os
             import platform
-            import datetime
+            from uuid import uuid4
+
+            import transaction
 
             """Listen for pub/sub messages"""
             self.context = zmq.Context()
@@ -811,16 +811,16 @@ class NodeServer(Server):
                         file = EmergeFile(id=host)
                         file.type = "node"
                         file.name = host
-                        file.path = "/nodes/"+host
+                        file.path = "/nodes/" + host
                         file.size = 0
                         file.uuid = str(uuid4())
                         file.id = parts[3]
 
                         nodes = fsroot.registry["/nodes"]["dir"]
-                        if "/nodes/"+host not in nodes:
-                            nodes["/nodes/"+host] = json.loads(str(file))
+                        if "/nodes/" + host not in nodes:
+                            nodes["/nodes/" + host] = json.loads(str(file))
 
-                        fsroot.registry["/nodes/"+host] = json.loads(str(file))
+                        fsroot.registry["/nodes/" + host] = json.loads(str(file))
                         fsroot.uuids[file.uuid] = json.loads(str(file))
                         logging.info("STORED /NODES dir %s", json.loads(str(file)))
                         transaction.commit()
