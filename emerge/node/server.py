@@ -224,9 +224,10 @@ class NodeServer(Server):
                 fsroot.registry[path]
                 raise Exception("Path {} already exists".format(path))
             except KeyError:
-                logging.info("mkdir: making new path is %s", path)
                 import datetime
+                import transaction
 
+                logging.info("mkdir: making new path is %s", path)
                 splits = path.split("/")
                 name = path.rsplit("/")[-1]
 
@@ -256,6 +257,7 @@ class NodeServer(Server):
                         logging.info("{} directory created".format(p))
                         dir[name] = dir_obj
                         fsroot.registry[path] = dir_obj
+                transaction.commit()
 
         def rm(self, path):
             connection = self.fs.db.open()
