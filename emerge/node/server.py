@@ -306,6 +306,11 @@ class NodeServer(Server):
 
             fsroot.objects[dest] = dill.loads(file)
 
+        def dir(self, path):
+            objs = self.list("/inventory", True)
+            for oid in objs:
+                yield self.getobject(oid, True)
+
         def list(self, path, nodill, offset=0, size=0):
             connection = self.fs.db.open()
 

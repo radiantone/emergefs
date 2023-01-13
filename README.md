@@ -247,9 +247,8 @@ class QueryFile(EmergeFile):
         """This only runs on the server and receives the filesystem object to traverse"""
         import json
 
-        objs = fs.list("/inventory", True)
-        for oid in objs:
-            obj = fs.getobject(oid, True)
+        self.results = []
+        for obj in fs.dir("/inventory"):
             if obj.unit_price < 15:
                 self.results.append(obj)
 
