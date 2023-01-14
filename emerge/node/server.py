@@ -1,8 +1,10 @@
 import logging
 import os
+import platform
 import signal
 import threading
 from typing import List
+from urllib.parse import urlparse
 
 import BTrees.OOBTree
 import dill
@@ -24,7 +26,6 @@ if not IS_BROKER:
     logging.info("broker object %s", broker)
 
     # Add myself to the brokers node list
-    broker.register({"path": "test"})
     logging.info("Contacted broker...")
 
 
@@ -158,6 +159,19 @@ class NodeServer(Server):
                     the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
                     return the_obj
 
+                if obj["type"] == "reference":
+                    logging.info("getobject: fetch file %s from %s", obj, obj["node"])
+                    node = fsroot.registry["/nodes/" + obj["node"]]
+                    logging.info("getobject: remote node %s", str(node))
+                    _remote = urlparse(node["id"])
+                    client = Client(_remote.hostname, _remote.port)
+                    _obj = client.getobject(path, nodill)
+                    logging.info("getobject: remote object %s", str(_obj))
+                    if nodill:
+                        return _obj
+                    else:
+                        return dill.dumps(_obj)
+
                 if obj["type"] == "file":
                     the_obj = fsroot.uuids[obj["uuid"]]
                     logging.info("getobject: return file %s", obj)
@@ -172,6 +186,10 @@ class NodeServer(Server):
                     return [dill.dumps(fsroot.uuids[o["uuid"]]) for o in obj["dir"]]
             finally:
                 connection.close()
+
+        def _resolve_object(self, path):
+            """Return an object whether it is local or remote"""
+            pass
 
         def get(self, path, page=0, size=-1):
 
@@ -363,7 +381,7 @@ class NodeServer(Server):
                 file = obj[name]
                 if file["type"] == "directory":
                     files += ["dir:" + file["name"]]
-                elif file["type"] == "file":
+                elif file["type"] == "file" or file["type"] == "reference":
                     files += [file["path"] + "/" + file["name"]]
                 else:
                     files += [file["path"]]
@@ -416,7 +434,13 @@ class NodeServer(Server):
                 transaction.commit()
 
         def register(self, entry):
+            import transaction
+
             logging.info("BROKER:register %s", entry)
+            file = EmergeFile(**entry)
+            self.store(entry["id"], entry["path"], entry["name"], "", dill.dumps(file))
+
+            transaction.commit()
 
         def searchtext(self, field, query):
             base = getattr(self.objects.search, field)
@@ -446,7 +470,12 @@ class NodeServer(Server):
             import json
             from functools import partial
 
-            data = json.loads(str(obj))
+            if isinstance(obj, EmergeFile):
+                data = json.loads(str(obj))
+            else:
+                if type(obj) is dict:
+                    data = obj
+
             fields = {}
             fields["uuid"] = graphene.String()
 
@@ -542,16 +571,68 @@ class NodeServer(Server):
 
             return fields, schema
 
+        def _make_paths(self, paths, root, fsroot):
+            import datetime
+
+            base = ""
+            directory = root
+
+            for p in paths:
+                _path = base + "/" + p
+                logging.info("store: _path is now %s", _path)
+                if p in root:
+                    logging.info("store: p %s found in root %s", p, root)
+                    root = directory = root[p]["dir"]
+                    logging.info("store: new root is %s", root)
+                    base = _path
+                else:
+                    dir = {
+                        "date": str(
+                            datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")
+                        ),
+                        "path": _path,
+                        "name": _path,
+                        "id": _path,
+                        "perms": "rwxrwxrwx",
+                        "parent": root,
+                        "type": "directory",
+                        "node": platform.node(),
+                        "size": 0,
+                        "dir": BTrees.OOBTree.BTree(),
+                    }
+
+                    logging.info("store: new dir id is %s", dir["dir"])
+
+                    root[p] = dir
+                    logging.info(
+                        "store: added new dir id %s to current root %s with key %s",
+                        dir,
+                        root,
+                        p,
+                    )
+                    logging.info("store: added dir is %s", root[p])
+                    directory = root = dir["dir"]
+
+                    # I created a new directory from a path and need to add it
+                    # to my registry for lookups
+                    fsroot.registry[_path] = dir
+                logging.info("root id is now %s", root)
+
+            return root, directory
+
         def store(self, id, path, name, source, obj):
             import datetime
             import json
             from uuid import uuid4
 
-            import BTrees.OOBTree
             import dill
             import transaction
 
-            _obj = dill.loads(obj)
+            if type(obj) is dict:
+                _obj = obj
+            else:
+                _obj = dill.loads(obj)
+
             connection = self.fs.db.open()
 
             fsroot = connection.root()
@@ -559,6 +640,7 @@ class NodeServer(Server):
             # TODO: Move this to the class so it can rebuild the schema
             # from the objects when it starts up new
 
+            logging.info("_OBJ %s %s", type(_obj), obj)
             _fields, self.schema = self.make_graphql(_obj)
 
             self.schemas[_obj.__class__.__name__] = self.schema
@@ -589,6 +671,7 @@ class NodeServer(Server):
                 "type": _obj.type,
                 "class": _obj.__class__.__name__,
                 "size": len(obj),
+                "node": _obj.node,
                 "uuid": _uuid,
                 "obj": json.loads(str(_obj)),
             }
@@ -602,52 +685,13 @@ class NodeServer(Server):
             else:
                 """Create all the BTree objects for each section in the path"""
                 paths = path.split("/")[1:]
-                base = ""
                 root = _root = fsroot.objects
                 logging.info("store: paths: %s", paths)
                 logging.info("root id %s", root)
 
                 """ Create BTree directories for each subpath if it doesn't exist
                 then set the directory to the last BTree in the path """
-                for p in paths:
-                    _path = base + "/" + p
-                    logging.info("store: _path is now %s", _path)
-                    if p in root:
-                        logging.info("store: p %s found in root %s", p, root)
-                        root = directory = root[p]["dir"]
-                        logging.info("store: new root is %s", root)
-                        base = _path
-                    else:
-                        dir = {
-                            "date": str(
-                                datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")
-                            ),
-                            "path": _path,
-                            "name": _path,
-                            "id": _path,
-                            "perms": "rwxrwxrwx",
-                            "parent": root,
-                            "type": "directory",
-                            "size": 0,
-                            "dir": BTrees.OOBTree.BTree(),
-                        }
-
-                        logging.info("store: new dir id is %s", dir["dir"])
-
-                        root[p] = dir
-                        logging.info(
-                            "store: added new dir id %s to current root %s with key %s",
-                            dir,
-                            root,
-                            p,
-                        )
-                        logging.info("store: added dir is %s", root[p])
-                        directory = root = dir["dir"]
-
-                        # I created a new directory from a path and need to add it
-                        # to my registry for lookups
-                        fsroot.registry[_path] = dir
-                    logging.info("root id is now %s", root)
+                root, directory = self._make_paths(paths, root, fsroot)
 
             logging.info("Adding file  %s to directory  [%s]", id, directory)
             directory[id] = file
@@ -662,7 +706,27 @@ class NodeServer(Server):
 
                     # Add my object reference to the brokers directory,
                     # pointing back to me
-                    broker.register({"path": path + "/" + name})
+                    logging.info(
+                        "registering %s",
+                        {
+                            "path": file["path"],
+                            "name": file["name"],
+                            "type": "reference",
+                            "id": file["id"],
+                            "uuid": file["uuid"],
+                            "node": platform.node(),
+                        },
+                    )
+                    broker.register(
+                        {
+                            "path": file["path"],
+                            "name": file["name"],
+                            "type": "reference",
+                            "id": file["id"],
+                            "uuid": file["uuid"],
+                            "node": platform.node(),
+                        }
+                    )
             else:
                 fsroot.registry[path + name] = file
                 logging.info("Adding to registry %s %s", path + name, file)
@@ -673,7 +737,27 @@ class NodeServer(Server):
 
                     # Add my object reference to the brokers directory,
                     # pointing back to me
-                    broker.register({"path": path + name})
+                    logging.info(
+                        "registering %s",
+                        {
+                            "path": file["path"],
+                            "name": file["name"],
+                            "type": "reference",
+                            "id": file["id"],
+                            "uuid": file["uuid"],
+                            "node": platform.node(),
+                        },
+                    )
+                    broker.register(
+                        {
+                            "path": file["path"],
+                            "name": file["name"],
+                            "type": "reference",
+                            "id": file["id"],
+                            "uuid": file["uuid"],
+                            "node": platform.node(),
+                        }
+                    )
 
             transaction.commit()
             logging.info("_OBJ str %s", str(_obj))
@@ -800,7 +884,10 @@ class NodeServer(Server):
                     client = zerorpc.Client()
                     client.connect(parts[3])
                     client.hello("tcp://{}:{}".format(platform.node(), self.rpcport))
-                    host = parts[3].split(":")[1].rsplit("/")[-1]
+                    # host = parts[3].split(":")[1].rsplit("/")[-1]
+                    parse = urlparse(parts[3])
+                    host = parse.hostname
+                    port = parse.port
 
                     if IS_BROKER and host != platform.node():
                         # Get registry from parts[3]
@@ -818,6 +905,8 @@ class NodeServer(Server):
                         file.size = 0
                         file.uuid = str(uuid4())
                         file.id = parts[3]
+                        file.host = host
+                        file.port = port
 
                         nodes = fsroot.registry["/nodes"]["dir"]
                         if "/nodes/" + host not in nodes:

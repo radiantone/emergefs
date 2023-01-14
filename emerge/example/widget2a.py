@@ -32,7 +32,7 @@ item = InventoryItem(
     path="/inventory",
     unit_price=3.0,
     quantity_on_hand=10,
-    data="A widget{} data".format(1),
+    data="A widget2a data",
 )
 client.store(item)
 print(item)
