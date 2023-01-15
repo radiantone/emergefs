@@ -210,8 +210,29 @@ class InventoryItem(EmergeFile):
 
 
 ```
+### Getting Objects
+`emerge` is a distributed and federated namespace platform serving python objects like a filesystem.
+When requesting an object by path, you can connect to any node in the filesystem to make this request.
+If that node does not host the object, it will consult the broker which will have a reference to where the file path is being held and retrieve it from that node.
+
+In the example output below, let's assume we have stored the object `/inventory/widget1` on the broker node.
+The node at `localhost:5559` does not have knowledge of that object.
+
+When we attempt to ask `localhost:5559` for `/inventory/widget` it first checks its own registry for that path, if it doesn't have it, it passes the request to the broker and you get the expected result.
+
+The second call `emerge cat /inventory/widget1` defaults to requesting the object from the broker.
+
+```bash
+$ emerge -h localhost:5559 cat /inventory/widget1
+{"data": "A widget1 data", "date": "Jan 15 2023 03:00:31", "id": "widget1", "name": "widget1", "node": "", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 10, "totalcost": 30.0, "type": "file", "unit_price": 3.0, "uuid": "af9720c3-01f8-43bd-b0a4-6988b0061997"}
+$ emerge cat /inventory/widget1
+{"data": "A widget1 data", "date": "Jan 15 2023 03:00:31", "id": "widget1", "name": "widget1", "node": "", "path": "/inventory", "perms": "rwxrwxrwx", "quantity_on_hand": 10, "totalcost": 30.0, "type": "file", "unit_price": 3.0, "uuid": "af9720c3-01f8-43bd-b0a4-6988b0061997"}
+
+
+```
 
 ### Querying the Filesystem
+
 
 #### Query With a Lambda
 `emerge` doesn't have a DSL query language, it uses `plain-old-python`! This removes a lot of layers, mappings, serializers and other complexities used between traditional SQL databases, ORMs, objects etc.
