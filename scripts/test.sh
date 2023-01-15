@@ -16,7 +16,6 @@ emerge rm /inventory
 emerge call /inventory total_cost
 emerge code /inventory/widget1
 emerge search data data
-emerge search
 python emerge/example/proxy.py
 emerge graphql "$(cat query3.json)"
 
