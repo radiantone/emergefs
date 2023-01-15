@@ -200,32 +200,35 @@ class NodeServer(Server):
 
             connection = self.fs.db.open()
 
-            fsroot = connection.root()
-            logging.info("get: path = %s", path)
+            try:
+                fsroot = connection.root()
+                logging.info("get: path = %s", path)
 
-            if path in fsroot.registry:
-                obj = fsroot.registry[path]
+                if path in fsroot.registry:
+                    obj = fsroot.registry[path]
 
-                if obj["type"] == "directory":
-                    obj["size"] = len(obj["dir"])
+                    if obj["type"] == "directory":
+                        obj["size"] = len(obj["dir"])
+                    else:
+                        obj["size"] = obj["size"]
+
+                    file = {
+                        "date": obj["date"],
+                        "path": obj["path"],
+                        "name": obj["name"],
+                        "id": obj["id"],
+                        "perms": obj["perms"],
+                        "source": obj["source"] if "source" in obj else "",
+                        "type": obj["type"],
+                        "class": obj.__class__.__name__,
+                        "size": obj["size"],
+                    }
+
+                    return file
                 else:
-                    obj["size"] = obj["size"]
-
-                file = {
-                    "date": obj["date"],
-                    "path": obj["path"],
-                    "name": obj["name"],
-                    "id": obj["id"],
-                    "perms": obj["perms"],
-                    "source": obj["source"] if "source" in obj else "",
-                    "type": obj["type"],
-                    "class": obj.__class__.__name__,
-                    "size": obj["size"],
-                }
-
-                return file
-            else:
-                return {"error": True, "message": "Path not found"}
+                    return {"error": True, "message": "Path not found"}
+            finally:
+                connection.close()
 
         def getdir(self, path, page=0, size=-1):
 
@@ -348,55 +351,58 @@ class NodeServer(Server):
         def list(self, path, nodill, offset=0, size=0):
             connection = self.fs.db.open()
 
-            fsroot = connection.root()
-            logging.info("list: path %s", path)
-            logging.info("root id is %s", fsroot.objects)
+            try:
+                fsroot = connection.root()
+                logging.info("list: path %s", path)
+                logging.info("root id is %s", fsroot.objects)
 
-            logging.info("ROOT IS %s", [o for o in fsroot.objects])
-            if path != "/":
-                paths = path.split("/")[1:]
-                dir = fsroot.objects
-                for p in paths:
-                    logging.info("list: p %s of paths %s", p, paths)
-                    try:
-                        file = dir[p]
-                        if file["type"] == "directory":
-                            dir = file["dir"]
-                        elif file["type"] == "file":
-                            if not nodill:
-                                return dill.dumps(file)
-                            else:
-                                return file
-                    except KeyError:
+                logging.info("ROOT IS %s", [o for o in fsroot.objects])
+                if path != "/":
+                    paths = path.split("/")[1:]
+                    dir = fsroot.objects
+                    for p in paths:
+                        logging.info("list: p %s of paths %s", p, paths)
+                        try:
+                            file = dir[p]
+                            if file["type"] == "directory":
+                                dir = file["dir"]
+                            elif file["type"] == "file":
+                                if not nodill:
+                                    return dill.dumps(file)
+                                else:
+                                    return file
+                        except KeyError:
+                            raise Exception("Path {} not found".format(path))
+
+                    if dir == fsroot.objects:
                         raise Exception("Path {} not found".format(path))
-
-                if dir == fsroot.objects:
-                    raise Exception("Path {} not found".format(path))
-                obj = dir
-                logging.info("found %s in %s %s", path, dir, len(obj))
-            else:
-                obj = fsroot.objects
-                logging.info("obj is self.fs.objects %s", len(obj))
-
-            logging.info("LIST: %s", list(obj))
-
-            files = []
-
-            for name in obj:
-                file = obj[name]
-                if file["type"] == "directory":
-                    files += ["dir:" + file["name"]]
-                elif file["type"] == "file" or file["type"] == "reference":
-                    files += [file["path"] + "/" + file["name"]]
+                    obj = dir
+                    logging.info("found %s in %s %s", path, dir, len(obj))
                 else:
-                    files += [file["path"]]
+                    obj = fsroot.objects
+                    logging.info("obj is self.fs.objects %s", len(obj))
 
-            logging.info("RETURNING FILES: %s", files)
-            logging.info("usedill %s", nodill)
-            if not nodill:
-                return dill.dumps(files)
-            else:
-                return files
+                logging.info("LIST: %s", list(obj))
+
+                files = []
+
+                for name in obj:
+                    file = obj[name]
+                    if file["type"] == "directory":
+                        files += ["dir:" + file["name"]]
+                    elif file["type"] == "file" or file["type"] == "reference":
+                        files += [file["path"] + "/" + file["name"]]
+                    else:
+                        files += [file["path"]]
+
+                logging.info("RETURNING FILES: %s", files)
+                logging.info("usedill %s", nodill)
+                if not nodill:
+                    return dill.dumps(files)
+                else:
+                    return files
+            finally:
+                connection.close()
 
         def execute(self, oid, method):
             connection = self.fs.db.open()
