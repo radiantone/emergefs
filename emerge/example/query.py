@@ -17,7 +17,7 @@ class QueryFile(EmergeFile):
         objs = fs.list("/inventory", True)
         for oid in objs:
             obj = fs.getobject(oid, True)
-            if obj.unit_price < 15:
+            if hasattr(obj, 'unit_price') and obj.unit_price < 15:
                 self.results.append(obj)
 
         return [str(result) for result in self.results]

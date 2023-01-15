@@ -18,6 +18,8 @@ from emerge.fs.filesystem import FileSystemFactory
 
 IS_BROKER = "ISBROKER" in os.environ
 
+global broker
+
 if not IS_BROKER:
     BROKER = os.environ["BROKER"]
     broker = Client(BROKER, "5558")
@@ -184,12 +186,15 @@ class NodeServer(Server):
 
                 elif obj["type"] == "directory":
                     return [dill.dumps(fsroot.uuids[o["uuid"]]) for o in obj["dir"]]
+            except KeyError:
+                if not IS_BROKER:
+                    logging.info("Contacting broker %s", BROKER)
+                    broker = Client(BROKER, "5558")
+                    obj = broker.getobject(path, nodill)
+                    logging.info("getobject: from broker %s", obj)
+                    return dill.dumps(obj)
             finally:
                 connection.close()
-
-        def _resolve_object(self, path):
-            """Return an object whether it is local or remote"""
-            pass
 
         def get(self, path, page=0, size=-1):
 
@@ -876,6 +881,7 @@ class NodeServer(Server):
 
                 parts = string.split(" ")
 
+                logging.debug("IS_BROKER %s", IS_BROKER)
                 if parts[1] == "HI":
 
                     connection = self.api.fs.db.open()
