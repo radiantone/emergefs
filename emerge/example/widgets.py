@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
 
+client = Client("0.0.0.0", "5558")
+
 
 @dataclass
 class InventoryItem(EmergeFile):
@@ -13,9 +15,6 @@ class InventoryItem(EmergeFile):
     quantity_on_hand: int = 0
     totalcost: float = 0.0
 
-    def run(self):
-        return "total cost:{}".format(self.total_cost())
-
     def total_cost(self) -> float:
         import logging
 
@@ -24,24 +23,7 @@ class InventoryItem(EmergeFile):
         return self.totalcost
 
 
-client = Client("0.0.0.0", "5558")
-
-item = InventoryItem(
-    id="widget1",
-    name="widget1",
-    path="/inventory",
-    unit_price=3.0,
-    quantity_on_hand=10,
-    data="A widget{} data".format(1),
-)
-client.store(item)
-print(item)
-
-
-# print(client.run("/inventory/widget1", "total_cost"))
-
-
-for i in range(2, 10):
+for i in range(1, 10):
     item = InventoryItem(
         id="widget" + str(i),
         name="widget" + str(i),

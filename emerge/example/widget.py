@@ -13,9 +13,6 @@ class InventoryItem(EmergeFile):
     totalcost: float = 0
     foo: str = "FOO"
 
-    def run(self):
-        return "total cost:{}".format(self.total_cost())
-
     def total_cost(self) -> float:
         import logging
 
