@@ -71,8 +71,9 @@ class NodeServer(Server):
                 else:
                     _obj = dill.loads(fsroot.uuids[oid])
                 logging.info("Building schema for %s", _obj.__class__)
-                _fields, self.schema = self.make_graphql(_obj)
+                _fields, self.schema = self._make_graphql(_obj)
 
+                logging.info("_fields: %s", _fields)
                 self.schemas[_obj.__class__.__name__] = self.schema
 
                 try:
@@ -88,6 +89,7 @@ class NodeServer(Server):
 
                 for key in _fields.keys():
                     try:
+                        logging.info("Creating index: %s", key)
                         self.objects.create_index(key, unique=False)
                     except:
                         pass
@@ -477,7 +479,7 @@ class NodeServer(Server):
             logging.info("SEARCH %s", _results)
             return _results
 
-        def make_graphql(self, obj):
+        def _make_graphql(self, obj):
             import json
             from functools import partial
 
@@ -573,7 +575,7 @@ class NodeServer(Server):
 
             schema = graphene.Schema(query=query)
             logging.info(
-                "make_graphql: schema %s %s ::%s:: %s",
+                "_make_graphql: schema %s %s ::%s:: %s",
                 schema,
                 item,
                 item.name,
@@ -652,8 +654,9 @@ class NodeServer(Server):
             # from the objects when it starts up new
 
             logging.info("_OBJ %s %s", type(_obj), obj)
-            _fields, self.schema = self.make_graphql(_obj)
+            _fields, self.schema = self._make_graphql(_obj)
 
+            logging.info("_fields: %s", _fields)
             self.schemas[_obj.__class__.__name__] = self.schema
 
             logging.info("_OBJ %s %s", _obj.__class__, _obj)
@@ -682,7 +685,9 @@ class NodeServer(Server):
                 "type": _obj.type,
                 "class": _obj.__class__.__name__,
                 "size": len(obj),
-                "node": _obj.node,
+                "node": _obj.node
+                if _obj.node and len(_obj.node) > 0
+                else platform.node(),
                 "uuid": _uuid,
                 "obj": json.loads(str(_obj)),
             }
@@ -787,11 +792,13 @@ class NodeServer(Server):
 
             for key in _fields.keys():
                 try:
+                    logging.info("Creating index: %s", key)
                     self.objects.create_index(key, unique=False)
-                except:
-                    pass
+                    self.objects.create_search_index(key)
+                except Exception as ex:
+                    logging.error(ex)
 
-            self.objects.create_search_index("data")
+            # self.objects.create_search_index("data")
 
             logging.info("ROOT IS %s", [o for o in fsroot.objects])
 

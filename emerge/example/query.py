@@ -14,13 +14,9 @@ class QueryFile(EmergeFile):
         """This only runs on the server and receives the filesystem object to traverse"""
 
         self.results = []
-        objs = fs.list("/inventory", True)
-        for oid in objs:
-            obj = fs.getobject(oid, True)
-            if hasattr(obj, "unit_price") and obj.unit_price < 15:
+        for obj in fs.dir("/inventory"):
+            if obj.unit_price < 15:
                 self.results.append(obj)
-
-        return [str(result) for result in self.results]
 
 
 query = QueryFile(id="query1", name="query1", path="/queries", data="A query object")
@@ -28,5 +24,5 @@ query = QueryFile(id="query1", name="query1", path="/queries", data="A query obj
 client = Client("0.0.0.0", "5558")
 client.store(query)
 
-results = client.query("/queries/query1")
-print(results)
+client.query("/queries/query1")
+print([str(result) for result in query.results])
