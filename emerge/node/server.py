@@ -440,7 +440,7 @@ class NodeServer(Server):
                         logging.info("After calling method %s: %s", method, the_obj)
                         return result
                     else:
-                        return None
+                        raise Exception("No such method on object")
             except KeyError:
                 return "No such object {}".format(oid)
             finally:
@@ -643,8 +643,10 @@ class NodeServer(Server):
 
             if type(obj) is dict:
                 _obj = obj
+                _obj["node"] = platform.node()
             else:
                 _obj = dill.loads(obj)
+                _obj.node = platform.node()
 
             connection = self.fs.db.open()
 
@@ -675,7 +677,7 @@ class NodeServer(Server):
                     _uuid = _obj.uuid
 
                 fsroot.uuids[_uuid] = dill.dumps(_obj)
-
+                logging.info("NODE is %s", platform.node())
                 file = {
                     "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
                     "path": _obj.path,
@@ -686,9 +688,7 @@ class NodeServer(Server):
                     "type": _obj.type,
                     "class": _obj.__class__.__name__,
                     "size": len(obj),
-                    "node": _obj.node
-                    if _obj.node and len(_obj.node) > 0
-                    else platform.node(),
+                    "node": platform.node(),
                     "uuid": _uuid,
                     "obj": json.loads(str(_obj)),
                 }
@@ -931,6 +931,7 @@ class NodeServer(Server):
                         file.id = parts[3]
                         file.host = host
                         file.port = port
+                        file.node = platform.node()
 
                         nodes = fsroot.registry["/nodes"]["dir"]
                         if "/nodes/" + host not in nodes:

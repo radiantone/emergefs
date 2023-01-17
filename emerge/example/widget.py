@@ -13,6 +13,9 @@ class InventoryItem(EmergeFile):
     totalcost: float = 0
     foo: str = "FOO"
 
+    def combine(self):
+        return "COMBINED"
+
     def total_cost(self) -> float:
         import logging
 

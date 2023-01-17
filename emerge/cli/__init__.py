@@ -322,10 +322,13 @@ def call(context, path, function, local):
     """Call an object method"""
     client = context.obj["client"]
 
-    if local:
-        obj = client.getobject(path, False)
-        method = getattr(obj, function)
-        print(method())
-    else:
-        result = client.run(path, function)
-        print(result)
+    try:
+        if local:
+            obj = client.getobject(path, False)
+            method = getattr(obj, function)
+            print(method())
+        else:
+            result = client.run(path, function)
+            print(result)
+    except Exception as ex:
+        logging.error(ex.msg)
