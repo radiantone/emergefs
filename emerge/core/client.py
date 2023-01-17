@@ -30,6 +30,8 @@ class Client:
 
         def getatt(self, oid, name):
             obj = self.client.getobject(oid, False)
+            if obj is None:
+                return obj
             _obj = dill.loads(obj)
             return getattr(_obj, name)
 
@@ -59,6 +61,8 @@ class Client:
         if type(file) is dict:
             return file
         else:
+            if file is None:
+                return file
             _file = dill.loads(file)
         return _file
 
