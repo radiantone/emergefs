@@ -26,21 +26,21 @@ lint:
 
 .PHONY: setup-install
 setup-install:
-	python setup.py install
+	python3 setup.py install
 
 .PHONY: install
 install: depends init
-	pip install -r requirements.txt
-	python setup.py install
-	python setup.py clean
+	pip3 install -r requirements.txt
+	python3 setup.py install
+	python3 setup.py clean
 
 .PHONY: update
 update: format lint
-	pip freeze | grep -v emerge > requirements.txt
+	pip3 freeze | grep -v emerge > requirements.txt
 	git add setup.py docs bin emerge requirements.txt Makefile README.md scripts
 	git commit --allow-empty -m "Updates"
 	git push origin main
-	python setup.py install
+	python3 setup.py install
 	git status
 
 .PHONY: build
@@ -64,7 +64,7 @@ docs:
 clean:
 	rm -rf data/broker/*
 	rm -rf data/node2/*
-	python setup.py clean
+	python3 setup.py clean
 	git status
 
 .PHONY: tests
