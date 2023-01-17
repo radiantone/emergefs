@@ -648,163 +648,168 @@ class NodeServer(Server):
 
             connection = self.fs.db.open()
 
-            fsroot = connection.root()
-
-            # TODO: Move this to the class so it can rebuild the schema
-            # from the objects when it starts up new
-
-            logging.info("_OBJ %s %s", type(_obj), obj)
-            _fields, self.schema = self._make_graphql(_obj)
-
-            logging.info("_fields: %s", _fields)
-            self.schemas[_obj.__class__.__name__] = self.schema
-
-            logging.info("_OBJ %s %s", _obj.__class__, _obj)
-            transaction.begin()
-            fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
-            transaction.commit()
-            _uuid = str(uuid4())
-
-            import transaction
-
-            transaction.begin()
-            if _obj.uuid is None or len(_obj.uuid) == 0:
-                _obj.uuid = _uuid
-            else:
-                _uuid = _obj.uuid
-
-            fsroot.uuids[_uuid] = dill.dumps(_obj)
-
-            file = {
-                "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
-                "path": _obj.path,
-                "name": _obj.name,
-                "id": _obj.id,
-                "perms": _obj.perms,
-                "source": source,
-                "type": _obj.type,
-                "class": _obj.__class__.__name__,
-                "size": len(obj),
-                "node": _obj.node
-                if _obj.node and len(_obj.node) > 0
-                else platform.node(),
-                "uuid": _uuid,
-                "obj": json.loads(str(_obj)),
-            }
-
-            logging.info("STORE: %s", file)
-
-            """If the path is already created, set the directory to that path"""
-            if path in fsroot.objects:
-                directory = fsroot.objects[path]
-                logging.info("Found %s in root.objects", path)
-            else:
-                """Create all the BTree objects for each section in the path"""
-                paths = path.split("/")[1:]
-                root = _root = fsroot.objects
-                logging.info("store: paths: %s", paths)
-                logging.info("root id %s", root)
-
-                """ Create BTree directories for each subpath if it doesn't exist
-                then set the directory to the last BTree in the path """
-                root, directory = self._make_paths(paths, root, fsroot)
-
-            logging.info("Adding file  %s to directory  [%s]", id, directory)
-            directory[id] = file
-
-            if path[-1] != "/" and len(name) > 0:
-                fsroot.registry[path + "/" + name] = file
-                logging.info("Adding to registry %s %s", path + "/" + name, file)
-
-                if not IS_BROKER:
-                    broker = Client(BROKER, "5558")
-                    logging.info("broker object %s", broker)
-
-                    # Add my object reference to the brokers directory,
-                    # pointing back to me
-                    logging.info(
-                        "registering %s",
-                        {
-                            "path": file["path"],
-                            "name": file["name"],
-                            "type": "reference",
-                            "id": file["id"],
-                            "uuid": file["uuid"],
-                            "node": platform.node(),
-                        },
-                    )
-                    broker.register(
-                        {
-                            "path": file["path"],
-                            "name": file["name"],
-                            "type": "reference",
-                            "id": file["id"],
-                            "uuid": file["uuid"],
-                            "node": platform.node(),
-                        }
-                    )
-            else:
-                fsroot.registry[path + name] = file
-                logging.info("Adding to registry %s %s", path + name, file)
-
-                if not IS_BROKER:
-                    broker = Client(BROKER, "5558")
-                    logging.info("broker object %s", broker)
-
-                    # Add my object reference to the brokers directory,
-                    # pointing back to me
-                    logging.info(
-                        "registering %s",
-                        {
-                            "path": file["path"],
-                            "name": file["name"],
-                            "type": "reference",
-                            "id": file["id"],
-                            "uuid": file["uuid"],
-                            "node": platform.node(),
-                        },
-                    )
-                    broker.register(
-                        {
-                            "path": file["path"],
-                            "name": file["name"],
-                            "type": "reference",
-                            "id": file["id"],
-                            "uuid": file["uuid"],
-                            "node": platform.node(),
-                        }
-                    )
-
-            transaction.commit()
-            logging.info("_OBJ str %s", str(_obj))
-            # insert_obj = json.loads(str(_obj))
-            # insert_obj["uuid"] = _uuid
             try:
-                self.objects.insert(_obj)
-            except KeyError:
-                self.objects.delete(id=_uuid)
-                self.objects.insert(_obj)
+                fsroot = connection.root()
 
-            try:
-                self.objects.create_index("uuid", unique=True)
-            except:
-                pass
+                # TODO: Move this to the class so it can rebuild the schema
+                # from the objects when it starts up new
 
-            for key in _fields.keys():
+                logging.info("_OBJ %s %s", type(_obj), obj)
+                _fields, self.schema = self._make_graphql(_obj)
+
+                logging.info("_fields: %s", _fields)
+                self.schemas[_obj.__class__.__name__] = self.schema
+
+                logging.info("_OBJ %s %s", _obj.__class__, _obj)
+                transaction.begin()
+                fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
+                transaction.commit()
+                _uuid = str(uuid4())
+
+                import transaction
+
+                transaction.begin()
+                if _obj.uuid is None or len(_obj.uuid) == 0:
+                    _obj.uuid = _uuid
+                else:
+                    _uuid = _obj.uuid
+
+                fsroot.uuids[_uuid] = dill.dumps(_obj)
+
+                file = {
+                    "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
+                    "path": _obj.path,
+                    "name": _obj.name,
+                    "id": _obj.id,
+                    "perms": _obj.perms,
+                    "source": source,
+                    "type": _obj.type,
+                    "class": _obj.__class__.__name__,
+                    "size": len(obj),
+                    "node": _obj.node
+                    if _obj.node and len(_obj.node) > 0
+                    else platform.node(),
+                    "uuid": _uuid,
+                    "obj": json.loads(str(_obj)),
+                }
+
+                logging.info("STORE: %s", file)
+
+                """If the path is already created, set the directory to that path"""
+                if path in fsroot.objects:
+                    directory = fsroot.objects[path]
+                    logging.info("Found %s in root.objects", path)
+                else:
+                    """Create all the BTree objects for each section in the path"""
+                    paths = path.split("/")[1:]
+                    root = _root = fsroot.objects
+                    logging.info("store: paths: %s", paths)
+                    logging.info("root id %s", root)
+
+                    """ Create BTree directories for each subpath if it doesn't exist
+                    then set the directory to the last BTree in the path """
+                    root, directory = self._make_paths(paths, root, fsroot)
+
+                logging.info("Adding file  %s to directory  [%s]", id, directory)
+                directory[id] = file
+
+                if path[-1] != "/" and len(name) > 0:
+                    fsroot.registry[path + "/" + name] = file
+                    logging.info("Adding to registry %s %s", path + "/" + name, file)
+
+                    if not IS_BROKER:
+                        broker = Client(BROKER, "5558")
+                        logging.info("broker object %s", broker)
+
+                        # Add my object reference to the brokers directory,
+                        # pointing back to me
+                        logging.info(
+                            "registering %s",
+                            {
+                                "path": file["path"],
+                                "name": file["name"],
+                                "type": "reference",
+                                "id": file["id"],
+                                "uuid": file["uuid"],
+                                "node": platform.node(),
+                            },
+                        )
+                        broker.register(
+                            {
+                                "path": file["path"],
+                                "name": file["name"],
+                                "type": "reference",
+                                "id": file["id"],
+                                "uuid": file["uuid"],
+                                "node": platform.node(),
+                            }
+                        )
+                else:
+                    fsroot.registry[path + name] = file
+                    logging.info("Adding to registry %s %s", path + name, file)
+
+                    if not IS_BROKER:
+                        broker = Client(BROKER, "5558")
+                        logging.info("broker object %s", broker)
+
+                        # Add my object reference to the brokers directory,
+                        # pointing back to me
+                        logging.info(
+                            "registering %s",
+                            {
+                                "path": file["path"],
+                                "name": file["name"],
+                                "type": "reference",
+                                "id": file["id"],
+                                "uuid": file["uuid"],
+                                "node": platform.node(),
+                            },
+                        )
+                        broker.register(
+                            {
+                                "path": file["path"],
+                                "name": file["name"],
+                                "type": "reference",
+                                "id": file["id"],
+                                "uuid": file["uuid"],
+                                "node": platform.node(),
+                            }
+                        )
+
+                transaction.commit()
+                logging.info("_OBJ str %s", str(_obj))
+                # insert_obj = json.loads(str(_obj))
+                # insert_obj["uuid"] = _uuid
                 try:
-                    logging.info("Creating index: %s", key)
-                    self.objects.create_index(key, unique=False)
-                    self.objects.create_search_index(key)
-                except Exception as ex:
-                    logging.error(ex)
+                    self.objects.insert(_obj)
+                except KeyError:
+                    self.objects.delete(id=_uuid)
+                    self.objects.insert(_obj)
 
-            # self.objects.create_search_index("data")
+                try:
+                    self.objects.create_index("uuid", unique=True)
+                except:
+                    pass
 
-            logging.info("ROOT IS %s", [o for o in fsroot.objects])
+                for key in _fields.keys():
+                    try:
+                        self.objects.create_index(key, unique=False)
+                    except:
+                        pass
+                    try:
+                        logging.info("Creating index: %s", key)
+                        self.objects.create_search_index(key, force=True)
+                    except Exception as ex:
+                        logging.error(ex)
 
-            # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
-            logging.info("OBJECTS LENGTH %s", len(fsroot.objects))
-            connection.close()
+                # self.objects.create_search_index("data")
+
+                logging.info("ROOT IS %s", [o for o in fsroot.objects])
+
+                # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
+                logging.info("OBJECTS LENGTH %s", len(fsroot.objects))
+            finally:
+                connection.close()
 
         def get_data(self, oid):
             obj: Data = self.fs.objects[oid]
