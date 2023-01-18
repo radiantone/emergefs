@@ -575,10 +575,9 @@ class NodeServer(Server):
 
             schema = graphene.Schema(query=query)
             logging.info(
-                "_make_graphql: schema %s %s ::%s:: %s",
+                "_make_graphql: schema %s %s %s",
                 schema,
                 item,
-                item.name,
                 fields,
             )
 

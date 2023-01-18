@@ -5,6 +5,9 @@ from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
 
 
+client = Client("0.0.0.0", "5558")
+
+
 @dataclass
 class QueryFile(EmergeFile):
     import persistent.list
@@ -24,7 +27,6 @@ class QueryFile(EmergeFile):
 
 query = QueryFile(id="query1", name="query1", path="/queries", data="A query object")
 
-client = Client("0.0.0.0", "5558")
 client.store(query)
 
 results = client.query("/queries/query1")

@@ -4,6 +4,16 @@ from dataclasses import dataclass
 
 from emerge.data import EmergeData
 
+from json import JSONEncoder
+
+
+def _default(self, obj):
+    return getattr(obj.__class__, "to_json", _default.default)(obj)
+
+
+_default.default = JSONEncoder().default
+JSONEncoder.default = _default
+
 
 class Server(metaclass=ABCMeta):
     @abstractmethod
@@ -48,7 +58,10 @@ class EmergeFile(EmergeObject):
     uuid: str = ""
     node: str = ""
 
-    def __str__(self):
+    def str(self):
+        return self.to_json(self)
+
+    def to_json(self):
         import json
         from types import ModuleType
 
