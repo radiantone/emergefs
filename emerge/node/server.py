@@ -183,7 +183,7 @@ class NodeServer(Server):
 
                 if obj["type"] == "node":
                     the_obj = fsroot.uuids[obj["uuid"]]
-                    logging.info("getobject: return file %s", the_obj)
+                    logging.info("getobject: return node %s", the_obj)
                     return the_obj
 
                 elif obj["type"] == "directory":

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import json
 from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
 
@@ -12,9 +11,6 @@ class Address(EmergeFile):
     state: str = ''
 
 
-print(Address(id="address1", street="Park Place", city="Quincy", state="MA"))
-
-
 @dataclass
 class Customer(EmergeFile):
     """Class for keeping track of an item in inventory."""
@@ -25,11 +21,11 @@ class Customer(EmergeFile):
 
 client = Client("0.0.0.0", "5558")
 
-item = Customer(
+customer = Customer(
     id="customer1",
     name="johndoe",
     path="/customers",
     address=Address(id="address1", street="Park Place", city="Quincy", state="MA")
 )
-client.store(item)
-print(item)
+client.store(customer)
+print(customer)
