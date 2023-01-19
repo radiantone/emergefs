@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from emerge.core.client import Client
 from emerge.core.objects import EmergeFile
 
-
 client = Client("0.0.0.0", "5558")
 
 

@@ -4,15 +4,13 @@ from dataclasses import dataclass
 
 from emerge.data import EmergeData
 
-from json import JSONEncoder
-
 
 def _default(self, obj):
     return getattr(obj.__class__, "to_json", _default.default)(obj)
 
 
-_default.default = JSONEncoder().default
-JSONEncoder.default = _default
+# _default.default = JSONEncoder().default
+# JSONEncoder.default = _default
 
 
 class Server(metaclass=ABCMeta):
@@ -76,6 +74,8 @@ class EmergeFile(EmergeObject):
             and v[0] != "_"
             and isinstance(getattr(self, v), ModuleType) is False
         ]:
+            if isinstance(getattr(self, i), EmergeObject):
+                ser[i] = getattr(self, i)
             if isinstance(getattr(self, i), persistent.list.PersistentList):
                 ser[i] = [str(o) for o in getattr(self, i)]
             else:
