@@ -47,6 +47,7 @@ class EmergeFile(EmergeObject):
     data: str = ""
     uuid: str = ""
     node: str = ""
+    version: int = 0
 
     def __str__(self):
         import json

@@ -15,7 +15,7 @@ class QueryFile(EmergeFile):
 
         self.results = []
         for obj in fs.dir("/inventory"):
-            if obj.unit_price < 15:
+            if obj.total_cost() < 400:
                 self.results.append(obj)
 
 

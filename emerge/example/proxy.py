@@ -5,6 +5,7 @@ client = Client("0.0.0.0", "5558")
 widget1 = client.proxy("/inventory/widget1")
 # Invoke method on server
 print(widget1.total_cost())
+print(widget1.name)
 
 widgets = client.list("/inventory")
 print(widgets)

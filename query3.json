@@ -1,9 +1,6 @@
 query {
   InventoryItemList {
     name
-    id
-    path
-    uuid
     totalcost
   }
 }

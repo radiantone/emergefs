@@ -230,11 +230,12 @@ def ls(context, long, directory):
                 if "error" in file and file["error"]:
                     click.echo(file["message"])
                     return
-                row = "{} {: <8} {: >10} {} {: <10}".format(
+                row = "{} {: <8} {: >4} {: >6} {: >4} {: <10}".format(
                     file["perms"],
                     human_readable_size(file["size"], 1)
                     if file["type"] == "file"
                     else file["size"],
+                    file["version"],
                     file["date"],
                     bcolors.ENDC,
                     file["name"],

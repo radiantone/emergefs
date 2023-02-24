@@ -214,6 +214,7 @@ class NodeServer(Server):
                     else:
                         obj["size"] = obj["size"]
 
+                    logging.info("get: obj %s",obj)
                     file = {
                         "date": obj["date"],
                         "path": obj["path"],
@@ -224,6 +225,7 @@ class NodeServer(Server):
                         "type": obj["type"],
                         "class": obj.__class__.__name__,
                         "size": obj["size"],
+                        "version": obj["version"]
                     }
 
                     return file
@@ -384,8 +386,6 @@ class NodeServer(Server):
                     obj = fsroot.objects
                     logging.info("obj is self.fs.objects %s", len(obj))
 
-                logging.info("LIST: %s", list(obj))
-
                 files = []
 
                 for name in obj:
@@ -396,9 +396,10 @@ class NodeServer(Server):
                         files += [file["path"] + "/" + file["name"]]
                     else:
                         files += [file["path"]]
+                    
+                    if len(files) >= 200:
+                        break
 
-                logging.info("RETURNING FILES: %s", files)
-                logging.info("usedill %s", nodill)
                 if not nodill:
                     return dill.dumps(files)
                 else:
@@ -691,6 +692,7 @@ class NodeServer(Server):
                     "node": platform.node(),
                     "uuid": _uuid,
                     "obj": json.loads(str(_obj)),
+                    "version": _obj.version
                 }
 
                 logging.info("STORE: %s", file)
