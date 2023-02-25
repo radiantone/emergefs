@@ -111,6 +111,19 @@ def graphql(context, query):
 
 
 @cli.command()
+@click.pass_context
+def index(context):
+    """ Create or update a search index """
+    pass
+
+
+@cli.command()
+@click.pass_context
+def update(context):
+    """ Update objects in the database"""
+    pass
+
+@cli.command()
 @click.argument("path")
 @click.pass_context
 def rm(context, path):

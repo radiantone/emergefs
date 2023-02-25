@@ -225,7 +225,7 @@ class NodeServer(Server):
                         "type": obj["type"],
                         "class": obj.__class__.__name__,
                         "size": obj["size"],
-                        "version": obj["version"]
+                        "version": obj["version"] if "version" in obj else 0
                     }
 
                     return file
@@ -299,6 +299,8 @@ class NodeServer(Server):
                 transaction.commit()
 
         def rm(self, path):
+            import transaction
+            
             connection = self.fs.db.open()
 
             fsroot = connection.root()
@@ -312,13 +314,18 @@ class NodeServer(Server):
                     logging.info("rm: p %s of paths %s", p, paths)
                     try:
                         file = dir[p]
+                        logging.info("file: %s", file)
                         if file["type"] == "directory":
                             dir = file["dir"]
+                            logging.info("dir: %s",list(dir))
                         elif file["type"] == "file":
                             logging.info("rm: removing %s", file)
+                            #self.objects.remove(dir[p])
                             del dir[p]
+                            transaction.commit()
                             return
-                    except KeyError:
+                    except KeyError as ex:
+                        logging.error(ex)
                         raise Exception("Path {} not found".format(path))
 
                 if not file:
@@ -330,8 +337,10 @@ class NodeServer(Server):
                 if file and dir != fsroot.objects:
                     logging.info("dir %s", file)
                     del file["parent"][p]
+                    transaction.commit()
 
-            except KeyError:
+            except KeyError as ex:
+                logging.error(ex)
                 raise Exception("Path {} not found".format(path))
 
         def cp(self, source, dest):
@@ -348,7 +357,7 @@ class NodeServer(Server):
             fsroot.objects[dest] = dill.loads(file)
 
         def dir(self, path):
-            objs = self.list("/inventory", True)
+            objs = self.list(path, True)
             for oid in objs:
                 yield self.getobject(oid, True)
 
@@ -408,6 +417,7 @@ class NodeServer(Server):
                 connection.close()
 
         def execute(self, oid, method):
+            import inspect
             connection = self.fs.db.open()
 
             fsroot = connection.root()
@@ -435,14 +445,21 @@ class NodeServer(Server):
                     if hasattr(the_obj, method):
                         _method = getattr(the_obj, method)
                         logging.info("Calling method %s on %s", method, the_obj)
-                        result = _method()
+                        if 'fs' in inspect.getfullargspec(_method).args:
+                            result = _method(fs=self)
+                        else:
+                            result = _method()
                         logging.info("after method obj %s", str(the_obj))
                         fsroot.uuids[obj["uuid"]] = dill.dumps(the_obj)
                         logging.info("After calling method %s: %s", method, the_obj)
+                        logging.info("result: %s", result)
                         return result
                     else:
                         raise Exception("No such method on object")
-            except KeyError:
+            except KeyError as ex:
+                import traceback
+                logging.info("%s", traceback.format_exc())
+                logging.error(ex)
                 return "No such object {}".format(oid)
             finally:
                 transaction.commit()
@@ -634,6 +651,37 @@ class NodeServer(Server):
 
             return root, directory
 
+        def reindex(self):
+            
+            connection = self.fs.db.open()
+
+            try:
+                fsroot = connection.root()
+                for uuid in fsroot.uuids:
+                    the_obj = dill.loads(fsroot.uuids[uuid])
+                    _fields, self.schema = self._make_graphql(the_obj)
+
+                    logging.info("_fields: %s", _fields)
+                    self.schemas[the_obj.__class__.__name__] = self.schema
+                    try:
+                        self.objects.create_index("uuid", unique=True)
+                    except:
+                        pass
+
+                    for key in _fields.keys():
+                        try:
+                            self.objects.create_index(key, unique=False)
+                        except:
+                            pass
+                        try:
+                            logging.info("Creating index: %s", key)
+                            self.objects.create_search_index(key, force=True)
+                        except Exception as ex:
+                            logging.error(ex)
+            finally:
+                connection.close()
+            return
+        
         def store(self, id, path, name, source, obj):
             import datetime
             import json
@@ -692,7 +740,7 @@ class NodeServer(Server):
                     "node": platform.node(),
                     "uuid": _uuid,
                     "obj": json.loads(str(_obj)),
-                    "version": _obj.version
+                    "version": _obj.version if _obj.version else 0
                 }
 
                 logging.info("STORE: %s", file)
