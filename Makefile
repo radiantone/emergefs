@@ -25,7 +25,7 @@ lint:
 	$(black) --check --diff
 
 .PHONY: setup-install
-setup-install:
+setup:
 	python3 setup.py install
 
 .PHONY: install
