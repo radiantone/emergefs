@@ -24,7 +24,7 @@ lint:
 	$(isort) --check-only --df
 	$(black) --check --diff
 
-.PHONY: setup-install
+.PHONY: setup
 setup:
 	python3 setup.py install
 
