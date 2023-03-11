@@ -111,6 +111,20 @@ def graphql(context, query):
 
 
 @cli.command()
+@click.pass_context
+def index(context):
+    """Create or update a search index"""
+    pass
+
+
+@cli.command()
+@click.pass_context
+def update(context):
+    """Update objects in the database"""
+    pass
+
+
+@cli.command()
 @click.argument("path")
 @click.pass_context
 def rm(context, path):
@@ -230,11 +244,12 @@ def ls(context, long, directory):
                 if "error" in file and file["error"]:
                     click.echo(file["message"])
                     return
-                row = "{} {: <8} {: >10} {} {: <10}".format(
+                row = "{} {: <8} {: >4} {: >6} {: >4} {: <10}".format(
                     file["perms"],
                     human_readable_size(file["size"], 1)
                     if file["type"] == "file"
                     else file["size"],
+                    file["version"],
                     file["date"],
                     bcolors.ENDC,
                     file["name"],

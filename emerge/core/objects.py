@@ -55,6 +55,7 @@ class EmergeFile(EmergeObject):
     data: str = ""
     uuid: str = ""
     node: str = ""
+    version: int = 0
 
     def str(self):
         return self.to_json(self)
