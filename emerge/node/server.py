@@ -188,7 +188,8 @@ class NodeServer(Server):
 
                 elif obj["type"] == "directory":
                     return [dill.dumps(fsroot.uuids[o["uuid"]]) for o in obj["dir"]]
-            except KeyError:
+            except KeyError as ex:
+                logging.error(ex)
                 if not IS_BROKER:
                     logging.info("Contacting broker %s", BROKER)
                     broker = Client(BROKER, "5558")
@@ -707,21 +708,26 @@ class NodeServer(Server):
                 # TODO: Move this to the class so it can rebuild the schema
                 # from the objects when it starts up new
 
+                # Make graphql schema for object
                 logging.info("_OBJ %s %s", type(_obj), obj)
                 _fields, self.schema = self._make_graphql(_obj)
 
+                # Store the schema
                 logging.info("_fields: %s", _fields)
                 self.schemas[_obj.__class__.__name__] = self.schema
 
+                # Store the objects class in the classes registry
                 logging.info("_OBJ %s %s", _obj.__class__, _obj)
                 transaction.begin()
                 fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
                 transaction.commit()
+
+                # Ensure object has a unique identifier
                 _uuid = str(uuid4())
 
-                import transaction
-
+                # BEGIN TRANSACTION
                 transaction.begin()
+
                 if _obj.uuid is None or len(_obj.uuid) == 0:
                     _obj.uuid = _uuid
                 else:
@@ -828,21 +834,22 @@ class NodeServer(Server):
                             }
                         )
 
-                transaction.commit()
                 logging.info("_OBJ str %s", str(_obj))
-                # insert_obj = json.loads(str(_obj))
-                # insert_obj["uuid"] = _uuid
+
+                # Insert object in the searchable index
                 try:
                     self.objects.insert(_obj)
                 except KeyError:
                     self.objects.delete(id=_uuid)
                     self.objects.insert(_obj)
 
+                # Create uuid index if it's not already there
                 try:
                     self.objects.create_index("uuid", unique=True)
                 except:
                     pass
 
+                # Ensure there are indexes for the fields of the object
                 for key in _fields.keys():
                     try:
                         self.objects.create_index(key, unique=False)
@@ -854,12 +861,9 @@ class NodeServer(Server):
                     except Exception as ex:
                         logging.error(ex)
 
-                # self.objects.create_search_index("data")
+                transaction.commit()
+                # COMPLETE TRANSACTION
 
-                logging.info("ROOT IS %s", [o for o in fsroot.objects])
-
-                # logging.info("STORE OBJECT  %s %s", path + "/" + name, _obj)
-                logging.info("OBJECTS LENGTH %s", len(fsroot.objects))
             finally:
                 connection.close()
 

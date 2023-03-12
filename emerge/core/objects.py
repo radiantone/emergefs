@@ -58,7 +58,7 @@ class EmergeFile(EmergeObject):
     version: int = 0
 
     def str(self):
-        return self.to_json(self)
+        return self.to_json()
 
     def to_json(self):
         import json
