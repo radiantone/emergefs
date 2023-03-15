@@ -12,21 +12,21 @@ class AggregationFile(emerge.core.objects.EmergeFile):
 
         customers = fs.dir("/customers")
 
-        df = pd.concat([pd.DataFrame([asdict(cust)])[['name', 'customerId', 'value']] for cust in customers])
-        group = df.groupby(['value', 'name'])
+        df = pd.concat([pd.DataFrame([asdict(cust)])[['name', 'customerId', 'value', 'words']] for cust in customers])
+        group = df.groupby(['value'])
 
-        return group.apply(lambda x: x.to_dict(orient='records'))
+        return group
 
 
 agg = AggregationFile(id="agg1", name="agg1", path="/aggregations", data="A query object")
 
 fs.store(agg)
 
-results = fs.query("/aggregations/agg1")
+groups = fs.query("/aggregations/agg1")
+print(groups.get_group(5).to_json(orient='records'))
 
-print(results)
-
-sorts = results.to_frame().sort_values(by='value', ascending=False, inplace=False)
+series = groups.apply(lambda x: x.to_dict(orient='records'))
+sorts = series.to_frame().sort_values(by='value', ascending=False, inplace=False)
 print(sorts)
 
 

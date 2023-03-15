@@ -35,4 +35,8 @@ emerge rm /inventory/widget7
 emerge rm /inventory/widget8
 emerge rm /inventory/widget9
 emerge rm /inventory
+
+
+python emerge/example/customers.py
+python emerge/example/aggregation.py
 emerge ls -l
