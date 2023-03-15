@@ -11,24 +11,17 @@ class QueryFile(EmergeFile):
 
     results = persistent.list.PersistentList()
 
-    def query(self, fs):
-        """This only runs on the server and receives the filesystem object to traverse"""
+    @staticmethod
+    def query(fs):
         import pandas as pd
-
         from dataclasses import asdict
 
         customers = fs.dir("/customers")
 
-        df = pd.DataFrame()
-
-        for o in customers:
-            d = pd.DataFrame([asdict(o)])
-            d = d[['name', 'customerId', 'value']]
-            df = df.append(d, ignore_index=True)
-
+        df = pd.concat([pd.DataFrame([asdict(cust)]) for cust in customers])
         group = df.groupby(['value'])
 
-        return group.apply(lambda x: x.to_json(orient='records')).to_json()
+        return group.apply(lambda x: x.to_dict(orient='records')).to_json()
 
 
 query = QueryFile(id="agg1", name="agg1", path="/aggregations", data="A query object")
@@ -37,6 +30,6 @@ client = Client("0.0.0.0", "5558")
 client.store(query)
 
 results = client.query("/aggregations/agg1")
-_r = json.loads(results)
-for key, value in _r.items():
-    print(key, json.dumps(json.loads(value), indent=4))
+
+for key, value in results.items():
+    print(key, value)

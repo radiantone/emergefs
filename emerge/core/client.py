@@ -83,7 +83,13 @@ class Client:
         print(path + " removed.")
 
     def query(self, path):
-        return self.client.query(path)
+        import json
+
+        result = self.client.query(path)
+        try:
+            return json.loads(result)
+        except:
+            return result
 
     def register(self, entry):
         logging.info("register entry %s", entry)
