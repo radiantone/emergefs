@@ -135,7 +135,6 @@ class NodeServer(Server):
             fsroot = connection.root()
             logging.info("CALLING QUERY")
             obj = self.getobject(path, True)
-            logging.info("GET RESULTS %s", obj.results)
             logging.info("query: obj %s %s", obj, type(obj))
             if hasattr(obj, "query"):
                 # Object implements query method and receives the database reference
@@ -158,7 +157,6 @@ class NodeServer(Server):
                 obj = fsroot.registry[path]
                 logging.info("getobject: object %s", obj)
 
-                logging.info("uuids %s", [uuid for uuid in fsroot.uuids])
                 if nodill:
                     the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
                     return the_obj

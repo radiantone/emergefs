@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import uuid4
-
+import random
 import persistent.list
 
 from emerge.core.client import Client
@@ -45,28 +45,34 @@ emerge.store(helper)
 class Customer(EmergeFile):
     """A Customer object."""
 
+    words: list = field(default_factory=list)
     createdOn: str = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     createTimeStamp: str = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     customerId: str = ""
-
+    value: int = 0
     fields = persistent.list.PersistentList()
 
 
-for i in range(0, 100000):
+for i in range(0, 100):
     customerId = str(uuid4())
     now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
 
-    for v in range(0, 4):
-        item = Customer(
-            id=f"Customer-{i}.{v}",
-            name=f"Customer-{i}.{v}",
-            perms="rwxrwxrwx",
-            path="/customers",
-            data=f"A customer {i}.{v} data".format(i),
-            customerId=customerId,
-            createdOn=now,
-            createTimeStamp=now,
-            version=v,
-        )
-        print(item)
-        emerge.store(item)
+    #for v in range(0, 4):
+    item = Customer(
+        #id=f"Customer-{i}.{v}",
+        #name=f"Customer-{i}.{v}",
+        id=f"Customer-{i}",
+        name=f"Customer-{i}",
+        words=['one', 'two', 'three', 'four', 'five'],
+        perms="rwxrwxrwx",
+        path="/customers",
+        value=random.randrange(10),
+        #data=f"A customer {i}.{v} data".format(i),
+        data=f"A customer {i} data".format(i),
+        customerId=customerId,
+        createdOn=now,
+        createTimeStamp=now,
+        version=0,
+    )
+    print(item)
+    emerge.store(item)
