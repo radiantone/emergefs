@@ -17,11 +17,11 @@ class QueryFile(EmergeFile):
 
         from dataclasses import asdict
 
-        old_list = fs.dir("/customers")
+        customers = fs.dir("/customers")
 
         df = pd.DataFrame()
 
-        for o in old_list:
+        for o in customers:
             d = pd.DataFrame([asdict(o)])
             d = d[['name', 'customerId', 'value']]
             df = df.append(d, ignore_index=True)
