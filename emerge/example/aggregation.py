@@ -24,8 +24,9 @@ fs.store(agg)
 
 results = fs.query("/aggregations/agg1")
 
-df = results.to_frame()
+print(results)
 
-sorts = df.sort_values(by='name', ascending=True, inplace=False)
+sorts = results.to_frame().sort_values(by='value', ascending=False, inplace=False)
 print(sorts)
+
 
