@@ -1,19 +1,16 @@
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
+from emerge import fs
+import emerge.core.objects
 
 
-class MyClass(EmergeFile):
+class MyClass(emerge.core.objects.EmergeFile):
     """Custom class"""
 
     def run(self):
-        return "wordsA:" + str(self.word_count())
+        return "words:" + str(self.word_count())
 
     def word_count(self):
         return len(self.data.split(" "))
 
-
-""" Connect to specific Node """
-client = Client("0.0.0.0", "5558")
 
 """ Store a custom instance there """
 obj = MyClass(
@@ -26,10 +23,10 @@ obj = MyClass(
 obj.text = "this is myclass of data"
 
 """ Store an object on a specific node """
-client.store(obj)
+fs.store(obj)
 
 """ Ask for it back """
-obj = client.getobject("/classes/myclass", False)
+obj = fs.getobject("/classes/myclass", False)
 
 """ Execute a method locally on this host """
 print("Getting data and word count")
@@ -39,4 +36,4 @@ print()
 
 """ Run the object as a service on the remote node """
 print("Executing run on server")
-print(client.run("/classes/myclass", "run"))
+print(fs.run("/classes/myclass", "run"))

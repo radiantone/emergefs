@@ -1,6 +1,4 @@
-from emerge.core.client import Client
+from emerge import fs
 
-client = Client("0.0.0.0", "5558")
-
-results = client.search(lambda o: hasattr(o, "unit_price") and o.unit_price < 3.5)
+results = fs.search(lambda o: hasattr(o, "unit_price") and o.unit_price < 3.5)
 print(results)

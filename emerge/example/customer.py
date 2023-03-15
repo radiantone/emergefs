@@ -1,28 +1,24 @@
-from dataclasses import dataclass
+from emerge import fs
+import emerge.core.objects
 
 import dill
 
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
 
-
-@dataclass
-class Address(EmergeFile):
+@emerge.dataclass
+class Address(emerge.core.objects.EmergeFile):
 
     street: str = ""
     city: str = ""
     state: str = ""
 
 
-@dataclass
-class Customer(EmergeFile):
+@emerge.dataclass
+class Customer(emerge.core.objects.EmergeFile):
     """Class for keeping track of an item in inventory."""
 
     address: Address = Address()
     name: str = ""
 
-
-client = Client("0.0.0.0", "5558")
 
 customer = Customer(
     id="customer1",
@@ -33,5 +29,5 @@ customer = Customer(
 
 print(str(customer.address))
 print(dill.loads(dill.dumps(customer)))
-client.store(customer)
+fs.store(customer)
 print(customer)

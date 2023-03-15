@@ -1,4 +1,4 @@
-from emerge.core.client import Client
+from emerge import fs
 
-results = Client("0.0.0.0", "5558").query("/queries/query1")
+results = fs.query("/queries/query1")
 print(results)

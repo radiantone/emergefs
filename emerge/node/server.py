@@ -144,7 +144,7 @@ class NodeServer(Server):
                 r = obj.query(self)
                 fsroot.uuids[obj.uuid] = dill.dumps(obj)
                 transaction.commit()
-                return r
+                return dill.dumps(r)
 
         def getobject(self, path, nodill, page=0, size=-1):
 

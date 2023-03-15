@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
+from emerge import fs
+import emerge.core.objects
 
 
-@dataclass
-class QueryFile(EmergeFile):
+@emerge.dataclass
+class QueryFile(emerge.core.objects.EmergeFile):
     import persistent.list
 
     results = persistent.list.PersistentList()
@@ -22,8 +20,7 @@ class QueryFile(EmergeFile):
 
 query = QueryFile(id="query1", name="query1", path="/queries", data="A query object")
 
-client = Client("0.0.0.0", "5558")
-client.store(query)
+fs.store(query)
 
-results = client.query("/queries/query1")
+results = fs.query("/queries/query1")
 print(results)

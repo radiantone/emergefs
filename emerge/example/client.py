@@ -1,13 +1,11 @@
-from dataclasses import dataclass
 from typing import List
-
 from persistent import Persistent
 
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
+from emerge import fs
+import emerge.core.objects
 
 
-class MyClass(EmergeFile):
+class MyClass(emerge.core.objects.EmergeFile):
     """Custom class"""
 
     text = None
@@ -27,8 +25,8 @@ class Collection(Persistent):
     list: List = []
 
 
-@dataclass
-class InventoryItem(EmergeFile):
+@emerge.dataclass
+class InventoryItem(emerge.core.objects.EmergeFile):
     """Class for keeping track of an item in inventory."""
 
     unit_price: float = 0.0
@@ -45,18 +43,15 @@ class InventoryItem(EmergeFile):
 We do this because we will be asking the network to perform batch calculations on
 our custom type using its data and methods """
 
-""" Connect to specific Node """
-client = Client("0.0.0.0", "5558")
-
 """ Store a custom instance there """
 obj = MyClass(id="myclass", name="myclass", path="/classes")
 obj.text = "this is myclass of data"
 
 """ Store an object on a specific node """
-# client.store(obj)
+# fs.store(obj)
 
 """ Ask for it back """
-# obj = client.getobject("/classes/myclass")
+# obj = fs.getobject("/classes/myclass")
 
 """ Execute a method locally on this host """
 print("Getting data and word count")
@@ -66,7 +61,7 @@ print("Getting data and word count")
 
 """ Run the object as a service on the remote node """
 # print("Executing run on server")
-# print(client.run("/classes/myclass", "run"))
+# print(fs.run("/classes/myclass", "run"))
 
 item = InventoryItem(
     id="widget1",
@@ -76,10 +71,10 @@ item = InventoryItem(
     quantity_on_hand=10,
     data="A widget{} data".format(1),
 )
-client.store(item)
+fs.store(item)
 print(item)
 
-print(client.run("/inventory/widget", "total_cost"))
+print(fs.run("/inventory/widget", "total_cost"))
 
 """
 for i in range(0, 10):

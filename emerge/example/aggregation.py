@@ -1,15 +1,9 @@
-import json
-from dataclasses import dataclass
-
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
+import emerge.core.objects
+from emerge import fs
 
 
-@dataclass
-class QueryFile(EmergeFile):
-    import persistent.list
-
-    results = persistent.list.PersistentList()
+@emerge.dataclass
+class AggregationFile(emerge.core.objects.EmergeFile):
 
     @staticmethod
     def query(fs):
@@ -18,18 +12,20 @@ class QueryFile(EmergeFile):
 
         customers = fs.dir("/customers")
 
-        df = pd.concat([pd.DataFrame([asdict(cust)]) for cust in customers])
-        group = df.groupby(['value'])
+        df = pd.concat([pd.DataFrame([asdict(cust)])[['name', 'customerId', 'value']] for cust in customers])
+        group = df.groupby(['value', 'name'])
 
-        return group.apply(lambda x: x.to_dict(orient='records')).to_json()
+        return group.apply(lambda x: x.to_dict(orient='records'))
 
 
-query = QueryFile(id="agg1", name="agg1", path="/aggregations", data="A query object")
+agg = AggregationFile(id="agg1", name="agg1", path="/aggregations", data="A query object")
 
-client = Client("0.0.0.0", "5558")
-client.store(query)
+fs.store(agg)
 
-results = client.query("/aggregations/agg1")
+results = fs.query("/aggregations/agg1")
 
-for key, value in results.items():
-    print(key, value)
+df = results.to_frame()
+
+sorts = df.sort_values(by='name', ascending=True, inplace=False)
+print(sorts)
+

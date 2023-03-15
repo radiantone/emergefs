@@ -1,20 +1,18 @@
-from emerge.core.client import Client
+from emerge import fs
 from emerge.core.objects import EmergeFile
 
-""" Connect to specific Node """
-client = Client("localhost", "5558")
 """ Store a custom instance there """
 obj = EmergeFile(id="file123", name="file 123", path="/files")
 obj.data = "this is myclass of data"
 
 """ Store an object on a specific node """
-client.store(obj)
+fs.store(obj)
 
 """ Ask for it back """
-obj = client.get("/files/file 123")
+obj = fs.get("/files/file 123")
 print("OBJ", obj)
 
-files = client.get("/files")
+files = fs.get("/files")
 print("FILES", files)
 
 for i in range(0, 10):
@@ -23,7 +21,7 @@ for i in range(0, 10):
     obj.data = "file {} data".format(i)
 
     """ Store an object on a specific node """
-    client.store(obj)
+    fs.store(obj)
 
     for x in range(0, 2):
         obj = EmergeFile(
@@ -33,12 +31,12 @@ for i in range(0, 10):
         )
         obj.data = "file {}:{} data".format(i, x)
 
-        client.store(obj)
+        fs.store(obj)
 
-files = client.list("/files/5", offset=0, size=0)
+files = fs.list("/files/5", offset=0, size=0)
 print(files)
 
-objs = [client.get(fid) for fid in files]
+objs = [fs.get(fid) for fid in files]
 print(objs)
 
 # objs = [client.get(fid['path']+"/"+fid['name']) for fid in files]

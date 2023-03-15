@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
+from emerge import fs
+import emerge.core.objects
 
 
-@dataclass
-class InventoryItem(EmergeFile):
+@emerge.dataclass
+class InventoryItem(emerge.core.objects.EmergeFile):
     """Custom Class for keeping track of an item in inventory."""
 
     unit_price: float = 0.0
@@ -28,8 +26,6 @@ class InventoryItem(EmergeFile):
                 self.results.append(obj)
 
 
-client = Client("0.0.0.0", "5558")
-
 # Create object with state/data
 item = InventoryItem(
     id="widget1",
@@ -39,11 +35,11 @@ item = InventoryItem(
     quantity_on_hand=10,
     data="A widget{} data with FOO".format(1),
 )
-client.store(item)
+fs.store(item)
 
 # Query my new class and return matching objects
-widgets = client.query("/inventory/widget1")
+widgets = fs.query("/inventory/widget1")
 # or just use lambdas without a def query() method
-widgets = client.search(
+widgets = fs.search(
     lambda o: hasattr(o, "unit_price") and o.total_cost() > 100 and o.unit_price < 3.5
 )

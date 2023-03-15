@@ -87,7 +87,9 @@ class Client:
 
         result = self.client.query(path)
         try:
-            return json.loads(result)
+            _r = dill.loads(result)
+            return _r
+            #return json.loads(result)
         except:
             return result
 

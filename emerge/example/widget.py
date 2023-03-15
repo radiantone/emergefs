@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
+from emerge import fs
+import emerge.core.objects
 
 
-@dataclass
-class InventoryItem(EmergeFile):
+@emerge.dataclass
+class InventoryItem(emerge.core.objects.EmergeFile):
     """Class for keeping track of an item in inventory."""
 
     unit_price: float = 0.0
@@ -24,8 +22,6 @@ class InventoryItem(EmergeFile):
         return self.totalcost
 
 
-client = Client("0.0.0.0", "5558")
-
 item = InventoryItem(
     id="widget1",
     name="widget1",
@@ -34,5 +30,5 @@ item = InventoryItem(
     quantity_on_hand=10,
     data="A widget{} data with FOO".format(1),
 )
-client.store(item)
+fs.store(item)
 print(item)

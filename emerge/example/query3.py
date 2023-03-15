@@ -1,8 +1,6 @@
-from emerge.core.client import Client
+from emerge import fs
 
-client = Client("0.0.0.0", "5558")
-
-query = client.getobject("/queries/query1", False)
+query = fs.getobject("/queries/query1", False)
 
 for result in query.results:
     print(round(result.total_cost(), 1))

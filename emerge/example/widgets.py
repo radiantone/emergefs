@@ -1,14 +1,10 @@
 import random
-from dataclasses import dataclass
-
-from emerge.core.client import Client
-from emerge.core.objects import EmergeFile
-
-client = Client("0.0.0.0", "5558")
+from emerge import fs
+import emerge.core.objects
 
 
-@dataclass
-class InventoryItem(EmergeFile):
+@emerge.dataclass
+class InventoryItem(emerge.core.objects.EmergeFile):
     """Class for keeping track of an item in inventory."""
 
     unit_price: float = 0.0
@@ -35,4 +31,4 @@ for i in range(1, 10):
         quantity_on_hand=random.randrange(0, 50),
     )
     print(item)
-    client.store(item)
+    fs.store(item)

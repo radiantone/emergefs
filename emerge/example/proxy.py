@@ -1,21 +1,20 @@
-from emerge.core.client import Client
+from emerge import fs
 
-client = Client("0.0.0.0", "5558")
 
-widget1 = client.proxy("/inventory/widget1")
+widget1 = fs.proxy("/inventory/widget1")
 # Invoke method on server
 print(widget1.total_cost())
 print(widget1.name)
 
-widgets = client.list("/inventory")
+widgets = fs.list("/inventory")
 print(widgets)
 
-proxies = [client.proxy(widget) for widget in widgets]
+proxies = [fs.proxy(widget) for widget in widgets]
 
 # Executes each method on the server
 print([proxy.total_cost() for proxy in proxies])
 
-query = client.proxy("/queries/query1")
+query = fs.proxy("/queries/query1")
 
 for result in query.results:
     print(result)
