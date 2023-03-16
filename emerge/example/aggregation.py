@@ -23,6 +23,7 @@ agg = AggregationFile(id="agg1", name="agg1", path="/aggregations", data="A quer
 fs.store(agg)
 
 groups = fs.query("/aggregations/agg1")
+print(groups.size().reset_index(name='counts'))
 print(groups.get_group(5).to_json(orient='records'))
 
 series = groups.apply(lambda x: x.to_dict(orient='records'))
