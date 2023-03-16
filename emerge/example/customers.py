@@ -52,15 +52,18 @@ class Customer(emerge.core.objects.EmergeFile):
     value: int = 0
     fields = persistent.list.PersistentList()
 
+_words = ['one', 'two', 'three', 'four', 'five']
 
 for i in range(0, 100):
     customerId = str(uuid4())
     now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-
+    words = []
+    words += [_words[random.randrange(len(_words))]]
+    words += [_words[random.randrange(len(_words))]]
     item = Customer(
         id=f"Customer-{i}",
         name=f"Customer-{i}",
-        words=['one', 'two', 'three', 'four', 'five'],
+        words=words,
         perms="rwxrwxrwx",
         path="/customers",
         value=random.randrange(10),
