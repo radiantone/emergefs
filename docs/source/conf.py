@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'PCB'
-copyright = '2022, Darren Govoni'
+project = 'emergefs'
+copyright = '2023-2030, Darren Govoni'
 author = 'Darren Govoni'
 
 # The full version, including alpha/beta/rc tags
@@ -67,8 +67,8 @@ html_theme_options = {
     'vcs_pageview_mode': '',
     'style_nav_header_background': '#abbcc3',
     # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
+    'collapse_navigation': False,
+    'sticky_navigation': False,
     'navigation_depth': 4,
     'includehidden': True,
     'titles_only': False
