@@ -1027,8 +1027,9 @@ class NodeServer(Server):
                         self.api.fs.nodes[parts[3]] = node
                         try:
                             self.api.mkdir("/nodes")
-                        except:
-                            pass
+                            transaction.commit()
+                        except Exception as ex:
+                            logging.error(ex)
 
                         file = EmergeFile(id=host)
                         file.type = "node"
