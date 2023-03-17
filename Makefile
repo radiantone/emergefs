@@ -53,6 +53,10 @@ build:
 up: build
 	docker compose up
 
+.PHONY: daemon
+daemon: build
+	docker compose up -d
+
 .PHONY: down
 down:
 	docker compose stop
@@ -69,9 +73,14 @@ clean:
 	python3 setup.py clean
 	git status
 
-.PHONY: tests
-tests: format lint
+.PHONY: test
+test: format lint
 	pytest emerge/tests
+
+.PHONY: run
+run: test daemon
+	./scripts/test.sh
+	make down
 	
 .PHONY: all
 all: format lint update docs install tests clean
