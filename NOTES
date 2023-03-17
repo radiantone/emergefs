@@ -1,5 +1,10 @@
 # NOTES
 
+- Maybe the Client should be a class returned from the server, specific to its implementation,
+but adheres to an interface
+- Added aggregation example using pandas
+
+
 Features Implemented
 
 - Metadata filesystem tree
