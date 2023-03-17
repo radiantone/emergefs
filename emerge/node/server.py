@@ -43,9 +43,7 @@ class NodeServer(Server):
     services: List = []
 
     class NodeAPI:
-        """Expose RPC API for interacting with this node server.
-        Often other nodes will need to make requests for objects from this
-        server."""
+        """Emerge Node RPC API"""
 
         name = "NodeAPI"
 
@@ -59,9 +57,7 @@ class NodeServer(Server):
 
             fsroot = connection.root()
             logging.info("ROOT IS %s", [o for o in fsroot])
-            # with self.fs.session():
-            #    """If the path is already created, set the directory to that path"""
-            #    self.fs.root.objects["hello"] = ["hello", "there"]
+
             self.schemas = {}
 
             self.objects = Table("objects")
@@ -95,6 +91,8 @@ class NodeServer(Server):
                         pass
 
         def graphql(self, query):
+            """Execute a graphql query"""
+
             import json
 
             logging.info("graphql: query: %s", query)
@@ -104,6 +102,7 @@ class NodeServer(Server):
             return result.data
 
         def hello(self, address):
+            """Receive a hello from a client and check my root"""
             logging.info("HELLO FROM {}".format(address))
             connection = self.fs.db.open()
             import transaction
@@ -113,6 +112,8 @@ class NodeServer(Server):
             transaction.commit()
 
         def registry(self):
+            """Return the registry for this node"""
+
             import platform
 
             for name in self.fs.registry:
@@ -128,25 +129,29 @@ class NodeServer(Server):
             return {"registry": registry, "host": platform.node()}
 
         def query(self, path, page=0, size=-1):
+            """Invoke the query operation of an object"""
+
             import transaction
 
-            connection = self.fs.db.open()
+            tx_mgr = transaction.TransactionManager()
+
+            connection = self.fs.db.open(tx_mgr)
 
             fsroot = connection.root()
-            logging.info("CALLING QUERY")
             obj = self.getobject(path, True)
             logging.info("query: obj %s %s", obj, type(obj))
             if hasattr(obj, "query"):
                 # Object implements query method and receives the database reference
                 # From there, the query method can scan the database and build a list of
                 # results
-                transaction.begin()
-                r = obj.query(self)
-                fsroot.uuids[obj.uuid] = dill.dumps(obj)
-                transaction.commit()
+                with tx_mgr:
+                    r = obj.query(self)
+                    fsroot.uuids[obj.uuid] = dill.dumps(obj)
+
                 return dill.dumps(r)
 
         def getobject(self, path, nodill, page=0, size=-1):
+            """Retrieve an object from the database"""
 
             connection = self.fs.db.open()
 
@@ -186,6 +191,7 @@ class NodeServer(Server):
 
                 elif obj["type"] == "directory":
                     return [dill.dumps(fsroot.uuids[o["uuid"]]) for o in obj["dir"]]
+
             except KeyError as ex:
                 logging.error(ex)
                 if not IS_BROKER:
@@ -198,6 +204,7 @@ class NodeServer(Server):
                 connection.close()
 
         def get(self, path, page=0, size=-1):
+            """Get a file pointer"""
 
             connection = self.fs.db.open()
 
@@ -234,6 +241,7 @@ class NodeServer(Server):
                 connection.close()
 
         def getdir(self, path, page=0, size=-1):
+            """Get all the objects in a directory"""
 
             connection = self.fs.db.open()
 
@@ -245,15 +253,31 @@ class NodeServer(Server):
                 return [dill.dumps(obj["dir"][o]) for o in obj["dir"]]
 
             if isinstance(obj, BTrees.OOBTree.OOBTree):
-                # return dill.dumps([dill.loads(obj[o]) for o in obj])
-                return [dill.dumps(obj[o]) for o in obj]
+                if size > 0 and page > 0:
+                    for i in range(0, page):
+                        offset = (page - 1) * size
+                        sublist = obj[offset : offset + size]
+                        return [dill.dumps(obj[o]) for o in sublist]
+                else:
+                    count = 0
+                    objs = []
+                    for o in obj:
+                        objs.append(o)
+                        if count >= 100:
+                            break
+                        count += 1
+                    return [dill.dumps(obj[o]) for o in objs]
             else:
-                # _obj = dill.loads(obj)
                 return obj
 
         def mkdir(self, path):
+            """Make a new directory object"""
 
-            connection = self.fs.db.open()
+            import transaction
+
+            tx_mgr = transaction.TransactionManager()
+
+            connection = self.fs.db.open(tx_mgr)
 
             fsroot = connection.root()
             logging.info("mkdir: path is %s", path)
@@ -262,8 +286,6 @@ class NodeServer(Server):
                 raise Exception("Path {} already exists".format(path))
             except KeyError:
                 import datetime
-
-                import transaction
 
                 logging.info("mkdir: making new path is %s", path)
                 splits = path.split("/")
@@ -282,25 +304,28 @@ class NodeServer(Server):
                 paths = splits[1:]
                 dir = fsroot.objects
 
-                for p in paths:
-                    logging.info("mkdir: name %s p %s of paths %s", name, p, paths)
-                    try:
-                        file = dir[p]
-                        if file["type"] == "directory":
-                            dir = file["dir"]
-                    except KeyError:
-                        if p != name:
-                            raise Exception("Path {} not found".format(p))
+                with tx_mgr:
+                    for p in paths:
+                        logging.info("mkdir: name %s p %s of paths %s", name, p, paths)
+                        try:
+                            file = dir[p]
+                            if file["type"] == "directory":
+                                dir = file["dir"]
+                        except KeyError:
+                            if p != name:
+                                raise Exception("Path {} not found".format(p))
 
-                        logging.info("{} directory created".format(p))
-                        dir[name] = dir_obj
-                        fsroot.registry[path] = dir_obj
-                transaction.commit()
+                            logging.info("{} directory created".format(p))
+                            dir[name] = dir_obj
+                            fsroot.registry[path] = dir_obj
 
         def rm(self, path):
+            """Remove an object"""
             import transaction
 
-            connection = self.fs.db.open()
+            tx_mgr = transaction.TransactionManager()
+
+            connection = self.fs.db.open(tx_mgr)
 
             fsroot = connection.root()
             try:
@@ -309,40 +334,41 @@ class NodeServer(Server):
                 dir = fsroot.objects
                 file = None
 
-                for p in paths:
-                    logging.info("rm: p %s of paths %s", p, paths)
-                    try:
-                        file = dir[p]
-                        logging.info("file: %s", file)
-                        if file["type"] == "directory":
-                            dir = file["dir"]
-                            logging.info("dir: %s", list(dir))
-                        elif file["type"] == "file":
-                            logging.info("rm: removing %s", file)
-                            # self.objects.remove(dir[p])
-                            del dir[p]
-                            transaction.commit()
-                            return
-                    except KeyError as ex:
-                        logging.error(ex)
+                with tx_mgr:
+                    for p in paths:
+                        logging.info("rm: p %s of paths %s", p, paths)
+                        try:
+                            file = dir[p]
+                            logging.info("file: %s", file)
+                            if file["type"] == "directory":
+                                dir = file["dir"]
+                                logging.info("dir: %s", list(dir))
+                            elif file["type"] == "file":
+                                logging.info("rm: removing %s", file)
+                                del dir[p]
+                                transaction.commit()
+                                return
+                        except KeyError as ex:
+                            logging.error(ex)
+                            raise Exception("Path {} not found".format(path))
+
+                    if not file:
                         raise Exception("Path {} not found".format(path))
 
-                if not file:
-                    raise Exception("Path {} not found".format(path))
+                    if file and file["type"] == "directory" and len(file["dir"]) > 0:
+                        raise Exception("Directory {} not empty".format(path))
 
-                if file and file["type"] == "directory" and len(file["dir"]) > 0:
-                    raise Exception("Directory {} not empty".format(path))
-
-                if file and dir != fsroot.objects:
-                    logging.info("dir %s", file)
-                    del file["parent"][p]
-                    transaction.commit()
+                    if file and dir != fsroot.objects:
+                        logging.info("dir %s", file)
+                        del file["parent"][p]
+                        transaction.commit()
 
             except KeyError as ex:
                 logging.error(ex)
                 raise Exception("Path {} not found".format(path))
 
         def cp(self, source, dest):
+            """Copy object from one location to another"""
             connection = self.fs.db.open()
 
             fsroot = connection.root()
@@ -356,11 +382,15 @@ class NodeServer(Server):
             fsroot.objects[dest] = dill.loads(file)
 
         def dir(self, path):
+            """List the objects in a directory path as a generator"""
+
             objs = self.list(path, True)
             for oid in objs:
                 yield self.getobject(oid, True)
 
         def list(self, path, nodill, offset=0, size=0):
+            """List/Retrieve the file pointers for a directory"""
+
             connection = self.fs.db.open()
 
             try:
@@ -416,65 +446,68 @@ class NodeServer(Server):
                 connection.close()
 
         def execute(self, oid, method):
+            """Execute a method on an object"""
+
             import inspect
 
-            connection = self.fs.db.open()
-
-            fsroot = connection.root()
             import transaction
 
-            transaction.begin()
-            try:
-                obj = fsroot.registry[oid]
+            tx_mgr = transaction.TransactionManager()
 
-                if obj["type"] == "directory":
-                    results = []
-                    for name in obj["dir"]:
-                        child = fsroot.registry[obj["path"] + "/" + name]
-                        logging.info("%s", child)
-                        the_obj = dill.loads(fsroot.uuids[child["uuid"]])
+            connection = self.fs.db.open(tx_mgr)
+
+            fsroot = connection.root()
+
+            with tx_mgr:
+                try:
+                    obj = fsroot.registry[oid]
+
+                    if obj["type"] == "directory":
+                        results = []
+                        for name in obj["dir"]:
+                            child = fsroot.registry[obj["path"] + "/" + name]
+                            logging.info("%s", child)
+                            the_obj = dill.loads(fsroot.uuids[child["uuid"]])
+
+                            if hasattr(the_obj, method):
+                                _method = getattr(the_obj, method)
+                                results += [_method()]
+                                fsroot.uuids[child["uuid"]] = dill.dumps(the_obj)
+                        return results
+                    else:
+                        the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
 
                         if hasattr(the_obj, method):
                             _method = getattr(the_obj, method)
-                            results += [_method()]
-                            fsroot.uuids[child["uuid"]] = dill.dumps(the_obj)
-                    return results
-                else:
-                    the_obj = dill.loads(fsroot.uuids[obj["uuid"]])
-
-                    if hasattr(the_obj, method):
-                        _method = getattr(the_obj, method)
-                        logging.info("Calling method %s on %s", method, the_obj)
-                        if "fs" in inspect.getfullargspec(_method).args:
-                            result = _method(fs=self)
+                            logging.info("Calling method %s on %s", method, the_obj)
+                            if "fs" in inspect.getfullargspec(_method).args:
+                                result = _method(fs=self)
+                            else:
+                                result = _method()
+                            logging.info("after method obj %s", str(the_obj))
+                            fsroot.uuids[obj["uuid"]] = dill.dumps(the_obj)
+                            logging.info("After calling method %s: %s", method, the_obj)
+                            logging.info("result: %s", result)
+                            return result
                         else:
-                            result = _method()
-                        logging.info("after method obj %s", str(the_obj))
-                        fsroot.uuids[obj["uuid"]] = dill.dumps(the_obj)
-                        logging.info("After calling method %s: %s", method, the_obj)
-                        logging.info("result: %s", result)
-                        return result
-                    else:
-                        raise Exception("No such method on object")
-            except KeyError as ex:
-                import traceback
+                            raise Exception("No such method on object")
+                except KeyError as ex:
+                    import traceback
 
-                logging.info("%s", traceback.format_exc())
-                logging.error(ex)
-                return "No such object {}".format(oid)
-            finally:
-                transaction.commit()
+                    logging.info("%s", traceback.format_exc())
+                    logging.error(ex)
+                    return "No such object {}".format(oid)
 
         def register(self, entry):
-            import transaction
+            """Add an object to the registry"""
 
             logging.info("BROKER:register %s", entry)
             file = EmergeFile(**entry)
             self.store(entry["id"], entry["path"], entry["name"], "", dill.dumps(file))
 
-            transaction.commit()
-
         def searchtext(self, field, query):
+            """Search for objects using free text"""
+
             base = getattr(self.objects.search, field)
             results = base(query)
             logging.info("ST RESULTS %s", results)
@@ -486,6 +519,7 @@ class NodeServer(Server):
             return _results
 
         def search(self, where):
+            """Search for objects using an expression"""
             lamd = dill.loads(where)
             logging.info("SEARCH LAMBDA: %s", lamd)
             results = self.objects.where(lamd)
@@ -508,8 +542,7 @@ class NodeServer(Server):
                 if type(obj) is dict:
                     data = obj
 
-            fields = {}
-            fields["uuid"] = graphene.String()
+            fields = {"uuid": graphene.String()}
 
             for key, value in data.items():
                 if type(value) is str:
@@ -573,9 +606,10 @@ class NodeServer(Server):
                 else:
                     return _results[0]
 
-            qfields = {}
-            qfields[obj.__class__.__name__] = graphene.Field(item, **fields)
-            qfields[obj.__class__.__name__ + "List"] = graphene.List(item)
+            qfields = {
+                obj.__class__.__name__: graphene.Field(item, **fields),
+                obj.__class__.__name__ + "List": graphene.List(item),
+            }
             params = {}
 
             for key in fields.keys():
@@ -653,7 +687,7 @@ class NodeServer(Server):
             return root, directory
 
         def reindex(self):
-
+            """Recreate all the searchable indexes"""
             connection = self.fs.db.open()
 
             try:
@@ -684,6 +718,7 @@ class NodeServer(Server):
             return
 
         def store(self, id, path, name, source, obj):
+            """Store an object in the database"""
             import datetime
             import json
             from uuid import uuid4
@@ -691,181 +726,200 @@ class NodeServer(Server):
             import dill
             import transaction
 
+            tx_mgr = transaction.TransactionManager()
+
             if type(obj) is dict:
                 _obj = obj
+                # Add this node name to object
                 _obj["node"] = platform.node()
             else:
+                # If not a dict then must be dilled
                 _obj = dill.loads(obj)
                 _obj.node = platform.node()
 
-            connection = self.fs.db.open()
+            connection = self.fs.db.open(tx_mgr)
 
             try:
-                fsroot = connection.root()
+                with tx_mgr as tx_mgr:
+                    fsroot = connection.root()
 
-                # TODO: Move this to the class so it can rebuild the schema
-                # from the objects when it starts up new
+                    # Make graphql schema for object
+                    logging.info("_OBJ %s %s", type(_obj), obj)
+                    _fields, self.schema = self._make_graphql(_obj)
 
-                # Make graphql schema for object
-                logging.info("_OBJ %s %s", type(_obj), obj)
-                _fields, self.schema = self._make_graphql(_obj)
+                    # Store the updated schema
+                    logging.info("_fields: %s", _fields)
+                    self.schemas[_obj.__class__.__name__] = self.schema
 
-                # Store the schema
-                logging.info("_fields: %s", _fields)
-                self.schemas[_obj.__class__.__name__] = self.schema
+                    # Store the objects class in the classes registry
+                    logging.info("_OBJ %s %s", _obj.__class__, _obj)
+                    # transaction.begin()
+                    fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
+                    # transaction.commit()
 
-                # Store the objects class in the classes registry
-                logging.info("_OBJ %s %s", _obj.__class__, _obj)
-                transaction.begin()
-                fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
-                transaction.commit()
+                    # Ensure object has a unique identifier
+                    _uuid = str(uuid4())
 
-                # Ensure object has a unique identifier
-                _uuid = str(uuid4())
+                    # BEGIN TRANSACTION
+                    # transaction.begin()
 
-                # BEGIN TRANSACTION
-                transaction.begin()
+                    # Ensure a uuid or use existing one
+                    if _obj.uuid is None or len(_obj.uuid) == 0:
+                        _obj.uuid = _uuid
+                    else:
+                        _uuid = _obj.uuid
 
-                if _obj.uuid is None or len(_obj.uuid) == 0:
-                    _obj.uuid = _uuid
-                else:
-                    _uuid = _obj.uuid
+                    # Place object in uuids registry for future lookups
+                    fsroot.uuids[_uuid] = dill.dumps(_obj)
 
-                fsroot.uuids[_uuid] = dill.dumps(_obj)
-                logging.info("NODE is %s", platform.node())
-                file = {
-                    "date": str(datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")),
-                    "path": _obj.path,
-                    "name": _obj.name,
-                    "id": _obj.id,
-                    "perms": _obj.perms,
-                    "source": source,
-                    "type": _obj.type,
-                    "class": _obj.__class__.__name__,
-                    "size": len(obj),
-                    "node": platform.node(),
-                    "uuid": _uuid,
-                    "obj": json.loads(str(_obj)),
-                    "version": _obj.version if _obj.version else 0,
-                }
+                    logging.info("NODE is %s", platform.node())
 
-                logging.info("STORE: %s", file)
+                    # Create the file pointer
+                    file = {
+                        "date": str(
+                            datetime.datetime.now().strftime("%b %d %Y %H:%M:%S")
+                        ),
+                        "path": _obj.path,
+                        "name": _obj.name,
+                        "id": _obj.id,
+                        "perms": _obj.perms,
+                        "source": source,
+                        "type": _obj.type,
+                        "class": _obj.__class__.__name__,
+                        "size": len(obj),
+                        "node": platform.node(),
+                        "uuid": _uuid,
+                        "obj": json.loads(str(_obj)),
+                        "version": _obj.version if _obj.version else 0,
+                    }
 
-                """If the path is already created, set the directory to that path"""
-                if path in fsroot.objects:
-                    directory = fsroot.objects[path]
-                    logging.info("Found %s in root.objects", path)
-                else:
-                    """Create all the BTree objects for each section in the path"""
-                    paths = path.split("/")[1:]
-                    root = _root = fsroot.objects
-                    logging.info("store: paths: %s", paths)
-                    logging.info("root id %s", root)
+                    logging.info("STORE: %s", file)
 
-                    """ Create BTree directories for each subpath if it doesn't exist
-                    then set the directory to the last BTree in the path """
-                    root, directory = self._make_paths(paths, root, fsroot)
+                    # If the path is already created, set the directory to that path
+                    if path in fsroot.objects:
+                        directory = fsroot.objects[path]
+                        logging.info("Found %s in root.objects", path)
+                    else:
+                        # Create all the BTree objects for each section in the path
+                        paths = path.split("/")[1:]
+                        root = _root = fsroot.objects
+                        logging.info("store: paths: %s", paths)
+                        logging.info("root id %s", root)
 
-                logging.info("Adding file  %s to directory  [%s]", id, directory)
-                directory[id] = file
+                        """ Create BTree directories for each subpath if it doesn't exist
+                        then set the directory to the last BTree in the path """
+                        root, directory = self._make_paths(paths, root, fsroot)
 
-                if path[-1] != "/" and len(name) > 0:
-                    fsroot.registry[path + "/" + name] = file
-                    logging.info("Adding to registry %s %s", path + "/" + name, file)
+                    logging.info("Adding file  %s to directory  [%s]", id, directory)
 
-                    if not IS_BROKER:
-                        broker = Client(BROKER, "5558")
-                        logging.info("broker object %s", broker)
+                    # Add the file pointer to the directory object
+                    directory[id] = file
 
-                        # Add my object reference to the brokers directory,
-                        # pointing back to me
+                    # Add the file pointer to the path registry
+                    if path[-1] != "/" and len(name) > 0:
+                        fsroot.registry[path + "/" + name] = file
                         logging.info(
-                            "registering %s",
-                            {
-                                "path": file["path"],
-                                "name": file["name"],
-                                "type": "reference",
-                                "id": file["id"],
-                                "uuid": file["uuid"],
-                                "node": platform.node(),
-                            },
-                        )
-                        broker.register(
-                            {
-                                "path": file["path"],
-                                "name": file["name"],
-                                "type": "reference",
-                                "id": file["id"],
-                                "uuid": file["uuid"],
-                                "node": platform.node(),
-                            }
-                        )
-                else:
-                    fsroot.registry[path + name] = file
-                    logging.info("Adding to registry %s %s", path + name, file)
-
-                    if not IS_BROKER:
-                        broker = Client(BROKER, "5558")
-                        logging.info("broker object %s", broker)
-
-                        # Add my object reference to the brokers directory,
-                        # pointing back to me
-                        logging.info(
-                            "registering %s",
-                            {
-                                "path": file["path"],
-                                "name": file["name"],
-                                "type": "reference",
-                                "id": file["id"],
-                                "uuid": file["uuid"],
-                                "node": platform.node(),
-                            },
-                        )
-                        broker.register(
-                            {
-                                "path": file["path"],
-                                "name": file["name"],
-                                "type": "reference",
-                                "id": file["id"],
-                                "uuid": file["uuid"],
-                                "node": platform.node(),
-                            }
+                            "Adding to registry %s %s", path + "/" + name, file
                         )
 
-                logging.info("_OBJ str %s", str(_obj))
+                        if not IS_BROKER:
+                            broker = Client(BROKER, "5558")
+                            logging.info("broker object %s", broker)
 
-                # Insert object in the searchable index
-                try:
-                    self.objects.insert(_obj)
-                except KeyError:
-                    self.objects.delete(id=_uuid)
-                    self.objects.insert(_obj)
+                            # Add my object reference to the brokers directory,
+                            # pointing back to me
+                            logging.info(
+                                "registering %s",
+                                {
+                                    "path": file["path"],
+                                    "name": file["name"],
+                                    "type": "reference",
+                                    "id": file["id"],
+                                    "uuid": file["uuid"],
+                                    "node": platform.node(),
+                                },
+                            )
+                            broker.register(
+                                {
+                                    "path": file["path"],
+                                    "name": file["name"],
+                                    "type": "reference",
+                                    "id": file["id"],
+                                    "uuid": file["uuid"],
+                                    "node": platform.node(),
+                                }
+                            )
+                    else:
+                        fsroot.registry[path + name] = file
+                        logging.info("Adding to registry %s %s", path + name, file)
 
-                # Create uuid index if it's not already there
-                try:
-                    self.objects.create_index("uuid", unique=True)
-                except:
-                    pass
+                        if not IS_BROKER:
+                            broker = Client(BROKER, "5558")
+                            logging.info("broker object %s", broker)
 
-                # Ensure there are indexes for the fields of the object
-                for key in _fields.keys():
+                            # Add my object reference to the brokers directory,
+                            # pointing back to me
+                            logging.info(
+                                "registering %s",
+                                {
+                                    "path": file["path"],
+                                    "name": file["name"],
+                                    "type": "reference",
+                                    "id": file["id"],
+                                    "uuid": file["uuid"],
+                                    "node": platform.node(),
+                                },
+                            )
+                            broker.register(
+                                {
+                                    "path": file["path"],
+                                    "name": file["name"],
+                                    "type": "reference",
+                                    "id": file["id"],
+                                    "uuid": file["uuid"],
+                                    "node": platform.node(),
+                                }
+                            )
+
+                    logging.info("_OBJ str %s", str(_obj))
+
+                    # Insert object in the searchable index
                     try:
-                        self.objects.create_index(key, unique=False)
+                        self.objects.insert(_obj)
+                    except KeyError:
+                        self.objects.delete(id=_uuid)
+                        self.objects.insert(_obj)
+
+                    # CREATE INDEXES
+                    # Might need to separate this out into its own operation
+
+                    # Create uuid index if it's not already there
+                    try:
+                        self.objects.create_index("uuid", unique=True)
                     except:
                         pass
-                    try:
-                        logging.info("Creating index: %s", key)
-                        self.objects.create_search_index(key, force=True)
-                    except Exception as ex:
-                        logging.error(ex)
 
-                transaction.commit()
-                # COMPLETE TRANSACTION
+                    # Ensure there are indexes for the fields of the object
+                    for key in _fields.keys():
+                        try:
+                            self.objects.create_index(key, unique=False)
+                        except:
+                            pass
+                        try:
+                            logging.info("Creating index: %s", key)
+                            self.objects.create_search_index(key, force=True)
+                        except Exception as ex:
+                            logging.error(ex)
+
+                    # transaction.commit()
+                    # COMPLETE TRANSACTION
 
             finally:
                 connection.close()
 
         def get_data(self, oid):
+            """Return the data for an object id"""
+
             obj: Data = self.fs.objects[oid]
 
             return obj.data

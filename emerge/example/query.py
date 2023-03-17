@@ -1,5 +1,5 @@
-from emerge import fs
 import emerge.core.objects
+from emerge import fs
 
 
 @emerge.dataclass

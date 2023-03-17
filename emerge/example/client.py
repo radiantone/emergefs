@@ -1,8 +1,9 @@
 from typing import List
+
 from persistent import Persistent
 
-from emerge import fs
 import emerge.core.objects
+from emerge import fs
 
 
 class MyClass(emerge.core.objects.EmergeFile):

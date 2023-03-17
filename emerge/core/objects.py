@@ -2,7 +2,6 @@
 from abc import ABCMeta, abstractmethod
 from dataclasses import dataclass
 
-from emerge.core.client import Client
 from emerge.data import EmergeData
 
 
@@ -35,6 +34,7 @@ class Server(metaclass=ABCMeta):
 @dataclass
 class EmergeObject(EmergeData):
     """Class for keeping track of an item in inventory."""
+
     pass
 
 

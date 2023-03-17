@@ -1,6 +1,5 @@
 from emerge import fs
 
-
 widget1 = fs.proxy("/inventory/widget1")
 # Invoke method on server
 print(widget1.total_cost())

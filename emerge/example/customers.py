@@ -1,11 +1,12 @@
+import random
 from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import uuid4
-import random
+
 import persistent.list
 
-from emerge import fs
 import emerge.core.objects
+from emerge import fs
 
 versions = False
 
@@ -52,7 +53,8 @@ class Customer(emerge.core.objects.EmergeFile):
     value: int = 0
     fields = persistent.list.PersistentList()
 
-_words = ['one', 'two', 'three', 'four', 'five']
+
+_words = ["one", "two", "three", "four", "five"]
 
 for i in range(0, 100):
     customerId = str(uuid4())
@@ -85,7 +87,7 @@ if versions:
             item = Customer(
                 id=f"Customer-{i}.{v}",
                 name=f"Customer-{i}.{v}",
-                words=['one', 'two', 'three', 'four', 'five'],
+                words=["one", "two", "three", "four", "five"],
                 perms="rwxrwxrwx",
                 path="/customers",
                 value=random.randrange(10),

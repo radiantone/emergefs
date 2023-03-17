@@ -83,13 +83,10 @@ class Client:
         print(path + " removed.")
 
     def query(self, path):
-        import json
-
         result = self.client.query(path)
         try:
             _r = dill.loads(result)
             return _r
-            #return json.loads(result)
         except:
             return result
 
