@@ -301,7 +301,9 @@ def methods(context, path):
     ]
 
     for method in method_list:
-        print(method, signature(getattr(file, method)))
+        _method = getattr(file, method)
+        if _method.__qualname__.find(file.__class__.__name__) == 0:
+            print(method, signature(_method))
 
 
 @cli.command()
