@@ -92,7 +92,6 @@ def start(context, port):
 @click.pass_context
 def search(context, field, query):
     """Search for objects by their field data"""
-
     client = context.obj["client"]
 
     results = client.searchtext(field, query)
