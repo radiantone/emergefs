@@ -30,9 +30,11 @@ setup:
 
 .PHONY: install
 install: depends init
-	pip3 install -r requirements.txt
-	python3 setup.py install
-	python3 setup.py clean
+	. venv/bin/activate && ( \
+	pip3 install -r requirements.txt; \
+	python3 setup.py install; \
+	python3 setup.py clean; \
+	)
 
 .PHONY: update
 update: format lint
