@@ -31,6 +31,7 @@ def human_readable_size(size, decimal_places=2):
 @click.option("-h", "--host", default=None, help="hostname:port for node")
 @click.pass_context
 def cli(context, debug, host):
+    """cli base command harness"""
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
@@ -170,8 +171,7 @@ def cp(context):
 @cli.command()
 @click.option("-h", "--host", default="0.0.0.0", help="Hostname of server")
 @click.option("-p", "--port", default="5558", help="Listen port for server")
-@click.pass_context
-def init(context, host, port):
+def init(host, port):
     """Initialize or update the emerge.ini file"""
     config = configparser.ConfigParser()
 
