@@ -114,7 +114,14 @@ def graphql(context, query):
 @click.pass_context
 def index(context):
     """Create or update a search index"""
-    pass
+    client = context.obj["client"]
+
+    try:
+        print("Creating index....")
+        client.index()
+        print("Index complete.")
+    except RemoteError as ex:
+        print(ex.msg)
 
 
 @cli.command()

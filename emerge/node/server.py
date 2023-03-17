@@ -690,31 +690,37 @@ class NodeServer(Server):
 
         def index(self):
             """Recreate all the searchable indexes"""
+            logging.info("index: started...")
             connection = self.fs.db.open()
-
             try:
                 fsroot = connection.root()
                 for uuid in fsroot.uuids:
-                    the_obj = dill.loads(fsroot.uuids[uuid])
-                    _fields, self.schema = self._make_graphql(the_obj)
-
-                    logging.info("_fields: %s", _fields)
-                    self.schemas[the_obj.__class__.__name__] = self.schema
+                    _obj = fsroot.uuids[uuid]
                     try:
-                        self.objects.create_index("uuid", unique=True)
+                        the_obj = dill.loads(fsroot.uuids[uuid])
+
+                        _fields, self.schema = self._make_graphql(the_obj)
+
+                        logging.info("_fields: %s", _fields)
+                        self.schemas[the_obj.__class__.__name__] = self.schema
+                        try:
+                            self.objects.create_index("uuid", unique=True)
+                        except:
+                            pass
+
+                        for key in _fields.keys():
+                            try:
+                                self.objects.create_index(key, unique=False)
+                            except:
+                                pass
+                            try:
+                                logging.info("Creating index: %s", key)
+                                self.objects.create_search_index(key, force=True)
+                            except Exception as ex:
+                                logging.error(ex)
                     except:
                         pass
 
-                    for key in _fields.keys():
-                        try:
-                            self.objects.create_index(key, unique=False)
-                        except:
-                            pass
-                        try:
-                            logging.info("Creating index: %s", key)
-                            self.objects.create_search_index(key, force=True)
-                        except Exception as ex:
-                            logging.error(ex)
             finally:
                 connection.close()
 
