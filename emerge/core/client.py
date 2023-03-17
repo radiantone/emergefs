@@ -23,6 +23,9 @@ class Client:
     def searchtext(self, field, query):
         return self.client.searchtext(field, query)
 
+    def index(self):
+        return self.client.index()
+
     def search(self, where):
         lamd = dill.dumps(where)
         return self.client.search(lamd)

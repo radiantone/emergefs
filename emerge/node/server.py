@@ -688,7 +688,7 @@ class NodeServer(Server):
 
             return root, directory
 
-        def reindex(self):
+        def index(self):
             """Recreate all the searchable indexes"""
             connection = self.fs.db.open()
 
@@ -717,7 +717,8 @@ class NodeServer(Server):
                             logging.error(ex)
             finally:
                 connection.close()
-            return
+
+            return True
 
         def store(self, id, path, name, source, obj):
             """Store an object in the database"""
