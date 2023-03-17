@@ -3,8 +3,18 @@ from functools import partial
 
 import dill
 import zerorpc
+import zope
 
 
+class IClient(zope.interface.Interface):
+    def search(self, where):
+        raise NotImplementedError()
+
+    def proxy(self, path):
+        raise NotImplementedError()
+
+
+@zope.interface.implementer(IClient)
 class Client:
     def __init__(self, host, port):
         self.client = zerorpc.Client()

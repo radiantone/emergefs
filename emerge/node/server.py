@@ -9,10 +9,11 @@ from urllib.parse import urlparse
 import BTrees.OOBTree
 import dill
 import graphene
+import zope
 from littletable import Table
 
 from emerge.compute import Data
-from emerge.core.client import Client
+from emerge.core.client import Client, IClient
 from emerge.core.objects import EmergeFile, Server
 from emerge.fs.filesystem import FileSystemFactory
 
@@ -42,6 +43,7 @@ class NodeServer(Server):
     socket = None
     services: List = []
 
+    @zope.interface.implementer(IClient)
     class NodeAPI:
         """Emerge Node RPC API"""
 
