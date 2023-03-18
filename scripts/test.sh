@@ -17,7 +17,7 @@ emerge call /inventory total_cost
 emerge code /inventory/widget1
 emerge search data data
 python emerge/example/proxy.py
-emerge graphql "$(cat query3.json)"
+emerge graphql "$(cat graphql/query3.json)"
 
 python emerge/example/widget2a.py
 emerge -h localhost:5559 ls -l
@@ -35,7 +35,7 @@ emerge rm /inventory/widget7
 emerge rm /inventory/widget8
 emerge rm /inventory/widget9
 emerge rm /inventory
-
+emerge index
 
 python emerge/example/customers.py
 python emerge/example/aggregation.py

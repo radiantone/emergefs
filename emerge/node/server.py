@@ -898,6 +898,9 @@ class NodeServer(Server):
                     except KeyError:
                         self.objects.delete(id=_uuid)
                         self.objects.insert(_obj)
+                    except Exception as ex:
+                        # TODO: Objects with subobjects trigger this
+                        logging.error(ex)
 
                     # CREATE INDEXES
                     # Might need to separate this out into its own operation
