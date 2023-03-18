@@ -14,7 +14,8 @@ dist
 **/.~lock*
 ./git
 .vscode
-data
+data/broker
+data/node2
 .idea
 venv*
 migration
