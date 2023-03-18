@@ -39,4 +39,6 @@ emerge index
 
 python emerge/example/customers.py
 python emerge/example/aggregation.py
+python emerge/example/geodata.py
+emerge cat /farms/farmOne
 emerge ls -l

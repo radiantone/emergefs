@@ -17,5 +17,4 @@ with open("data/shape/DarrenFarm.geojson", "r") as farm:
     shape = geojson.loads(farm.read())
     farm = Farm(id="farm1", name="farmOne", path="/farms")
     farm.shape = json.loads(geojson.dumps(shape))
-    print(farm)
     fs.store(farm)
