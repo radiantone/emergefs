@@ -83,5 +83,5 @@ run: test daemon
 	make down
 	
 .PHONY: all
-all: format lint update docs install tests clean
+all: format lint update docs install test clean run
 	git status

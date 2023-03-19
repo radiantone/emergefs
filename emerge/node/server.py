@@ -912,7 +912,7 @@ class NodeServer(Server):
                         pass
 
                     # Ensure there are indexes for the fields of the object
-                    '''
+                    """
                     for key in _fields.keys():
                         try:
                             self.objects.create_index(key, unique=False)
@@ -923,7 +923,7 @@ class NodeServer(Server):
                             self.objects.create_search_index(key, force=True)
                         except Exception as ex:
                             logging.error(ex)
-                    '''
+                    """
                     # transaction.commit()
                     # COMPLETE TRANSACTION
 

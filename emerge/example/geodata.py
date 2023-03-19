@@ -3,11 +3,11 @@ import json
 from dataclasses import field
 
 import geojson
+import geopandas as gp
 from geojson import FeatureCollection
 
 import emerge.core.objects
 from emerge import fs
-import geopandas as gp
 
 
 @emerge.dataclass
@@ -25,7 +25,7 @@ class Farm(emerge.core.objects.EmergeFile):
 
     @property
     def geo(self):
-        gdf = gp.GeoDataFrame.from_features(self._shape['features'])
+        gdf = gp.GeoDataFrame.from_features(self._shape["features"])
         gdf.crs = self.crs
         return gdf
 
@@ -55,4 +55,3 @@ more_land = gp.pd.concat([farm1.geo, farm2.geo])
 more_land.crs = "EPSG:4326"
 print(more_land)
 print("CENTROID", more_land.to_crs(3857).centroid)
-
