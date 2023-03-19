@@ -7,6 +7,7 @@ from geojson import FeatureCollection
 
 import emerge.core.objects
 from emerge import fs
+import geopandas as gp
 
 
 @emerge.dataclass
@@ -22,12 +23,13 @@ class Farm(emerge.core.objects.EmergeFile):
         self._shape = json.loads(geojson.dumps(value))
 
 
-with open("data/shape/DarrenFarm.geojson", "r") as farm:
-    shape = geojson.loads(farm.read())
+with open("data/shape/DarrenFarm.geojson", "r") as file:
     farm = Farm(id="farm1", name="farmOne", path="/farms")
-    farm.shape = json.loads(geojson.dumps(shape))
+    farm.shape = geojson.loads(file.read())
     fs.store(farm)
 
 farm = fs.getobject("/farms/farmOne", False)
 print(farm)
-print(farm.shape)
+gdf = gp.GeoDataFrame.from_features(farm.shape['features'])
+gdf.crs = "EPSG:4326"
+print("CENTROID", gdf.to_crs(3857).centroid)
