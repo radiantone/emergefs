@@ -15,6 +15,7 @@ emerge --debug call /inventory/widget3 total_cost
 emerge rm /inventory
 emerge call /inventory total_cost
 emerge code /inventory/widget1
+emerge index
 emerge search data data
 python emerge/example/proxy.py
 emerge graphql "$(cat graphql/query3.json)"
@@ -35,7 +36,6 @@ emerge rm /inventory/widget7
 emerge rm /inventory/widget8
 emerge rm /inventory/widget9
 emerge rm /inventory
-emerge index
 
 python emerge/example/customers.py
 python emerge/example/aggregation.py
