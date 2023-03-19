@@ -24,13 +24,13 @@ class Farm(emerge.core.objects.EmergeFile):
         self._shape = json.loads(geojson.dumps(value))
 
     @property
-    def geodataframe(self):
+    def geo(self):
         gdf = gp.GeoDataFrame.from_features(self._shape['features'])
         gdf.crs = self.crs
         return gdf
 
     def centroid(self):
-        farm_gd = self.geodataframe
+        farm_gd = self.geo
         return farm_gd.to_crs(3857).centroid
 
 
@@ -51,7 +51,7 @@ with open("data/shape/parcel2.geojson", "r") as file:
     fs.store(farm2)
 
 # Join the farmOne and parcelOne shapes into one big farm shape
-more_land = gp.pd.concat([farm1.geodataframe, farm2.geodataframe])
+more_land = gp.pd.concat([farm1.geo, farm2.geo])
 more_land.crs = "EPSG:4326"
 print(more_land)
 print("CENTROID", more_land.to_crs(3857).centroid)
