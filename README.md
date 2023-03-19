@@ -1,4 +1,4 @@
-<img src="./img/logo.png" width="200">
+<img src="./images/logo.png" width="200">
 
 *Serverless, object-oriented, computational file system for python*
 
