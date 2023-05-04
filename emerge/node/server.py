@@ -749,7 +749,7 @@ class NodeServer(Server):
             connection = self.fs.db.open(tx_mgr)
 
             try:
-                with tx_mgr as tx_mgr:
+                with tx_mgr:
                     fsroot = connection.root()
 
                     # Make graphql schema for object
