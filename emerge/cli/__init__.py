@@ -46,7 +46,7 @@ def cli(context, debug, host):
             level=logging.INFO,
         )
 
-    from emerge.core.client import Client
+    from emerge.core.client import Z0RPCClient as Client
 
     """ Connect to specific Node """
 

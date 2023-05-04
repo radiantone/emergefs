@@ -5,6 +5,9 @@ import dill
 import zerorpc
 import zope
 
+ZERORPC_CLIENT = zerorpc.Client
+HTTP_CLIENT = ""
+
 
 class IClient(zope.interface.Interface):
     def search(self, where):
@@ -13,11 +16,23 @@ class IClient(zope.interface.Interface):
     def proxy(self, path):
         raise NotImplementedError()
 
+    def index(self):
+        raise NotImplementedError()
+
+    def searchtext(self, field, query):
+        raise NotImplementedError()
+
 
 @zope.interface.implementer(IClient)
-class Client:
+class RESTClient:
+    pass
+
+
+@zope.interface.implementer(IClient)
+class Z0RPCClient:
     def __init__(self, host, port):
-        self.client = zerorpc.Client()
+        # TODO: This is where the client implemenation should change
+        self.client = ZERORPC_CLIENT()
         self.client.connect("tcp://{}:{}".format(host, port))
 
     def searchtext(self, field, query):
@@ -125,3 +140,6 @@ class Client:
 
     def run(self, oid, method):
         return self.client.execute(oid, method)
+
+
+Client = Z0RPCClient
