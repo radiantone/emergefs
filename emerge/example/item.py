@@ -3,7 +3,6 @@ from typing import List
 from persistent import Persistent
 
 import emerge.core.objects
-from emerge import fs
 
 
 class MyClass(emerge.core.objects.EmergeFile):
