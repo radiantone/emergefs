@@ -1,5 +1,5 @@
 import emerge.core.objects
-from emerge import fs as emergefs
+from emerge import fs
 
 
 @emerge.dataclass
@@ -27,9 +27,9 @@ agg = AggregationFile(
     id="agg1", name="agg1", path="/aggregations", data="A query object"
 )
 
-emergefs.store(agg)
+fs.store(agg)
 
-groups = emergefs.query("/aggregations/agg1")
+groups = fs.query("/aggregations/agg1")
 # Compute size of each group and add it to count col
 counts = groups.size().reset_index(name="count")
 print(counts)
