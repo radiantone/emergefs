@@ -129,6 +129,7 @@ setup(
         'click',
         'black',
         'isort',
+        'dill',
         'flake8',
         'zerorpc'
     ],
