@@ -1,0 +1,7 @@
+- Add different RPC implementations e.g. HTTP (in addition to 0MQ/ZRPC) so it can run in a browser (clients)
+- Be able to combine objects into new mixed-in objects
+    - For example:  $ emerge mixin /path/object1 /path/object2 /path/mixedobject
+    - The state from each source object and its methods are carried over into the new object, leaving the originals in tact
+- Stress, performance tests
+- pytests
+- docs
