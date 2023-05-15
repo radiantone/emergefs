@@ -5,3 +5,14 @@
 - Stress, performance tests
 - pytests
 - docs
+- Be able to compose objects. In addition to directories and subdirectories of objects, it would be cool to compose
+  objects. For example, let's say you have a Customer object and many Account objects in separate directories as
+  separate classes. The Account object contains a field for the uuid of the Customer object.
+  Instead, we might want to do something like this:
+
+  $ emerge add /path/customer1 "accounts" /path/account1 /path/account2
+
+  Which adds account1 and account2 as children to customer1. In such a way, that when you retrieve customer1
+  and iterate over its "accounts" property, you get the list of accounts.
+
+  Doing this on-the-fly without having to hard code the object relations would be awesome.
