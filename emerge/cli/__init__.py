@@ -88,6 +88,45 @@ def start(context, port):
 
 
 @cli.command()
+@click.argument("class1", required=True, default=None)
+@click.argument("class2", required=True, default=None)
+@click.argument("name", required=True, default=None)
+@click.option("-p","--path", required=False, default=None)
+@click.pass_context
+def mixin(context, class1, class2, name, path):
+    """Mix in 2 classes into a new combined class or instance"""
+    import json
+
+    client = context.obj["client"]
+
+    _object1 = client.getobject(class1, False)
+    _object2 = client.getobject(class2, False)
+
+    _class1 = _object1.__class__
+    _class2 = _object2.__class__
+
+
+    object1_data = json.loads(_object1.to_json())
+    object2_data = json.loads(_object2.to_json())
+    object1_data.update(object2_data)
+
+    def constructor(self, *args, **kwargs):
+        pass
+
+    object1_data["__init__"] = constructor
+
+    _mixin = type(name, (_class1, _class2), object1_data)
+    help(_mixin)
+
+    mixin = _mixin()
+
+    print(mixin)
+    if path:
+        # Create instance of __mixin combining the data from object1 and object2
+        pass
+
+
+@cli.command()
 @click.argument("field", required=True, default=None)
 @click.argument("query", required=True, default=None)
 @click.pass_context
