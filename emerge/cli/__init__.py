@@ -90,12 +90,15 @@ def start(context, port):
 @cli.command()
 @click.argument("class1", required=True, default=None)
 @click.argument("class2", required=True, default=None)
+@click.argument("mixin", required=True, default=None)
 @click.argument("name", required=True, default=None)
 @click.option("-p","--path", required=False, default=None)
 @click.pass_context
-def mixin(context, class1, class2, name, path):
+def mixin(context, class1, class2, mixin, name, path):
     """Mix in 2 classes into a new combined class or instance"""
     import json
+
+    import uuid
 
     client = context.obj["client"]
 
@@ -110,20 +113,34 @@ def mixin(context, class1, class2, name, path):
     object2_data = json.loads(_object2.to_json())
     object1_data.update(object2_data)
 
+
     def constructor(self, *args, **kwargs):
         pass
 
     object1_data["__init__"] = constructor
-
-    _mixin = type(name, (_class1, _class2), object1_data)
+    #print(_class1,_class2)
+    #source = f"""class {mixin}({_class1.__name__},{_class2.__name__}): pass"""
+    #print(source)
+    #exec(source)
+    _mixin = type(mixin, (_class1, _class2), object1_data)
+    #module = importlib.import_module(_mixin.__module__)
+    #setattr(module, name, _mixin)
     help(_mixin)
 
-    mixin = _mixin()
+    mixin_obj = _mixin()
 
-    print(mixin)
+    mixin_obj.id = name
+    mixin_obj.name = name
+    print(mixin_obj)
     if path:
+        mixin_obj.path = path
+
+        mixin_obj.uuid = str(uuid.uuid4())
         # Create instance of __mixin combining the data from object1 and object2
-        pass
+        # inspect.getsource(type(mixin_obj))
+
+        client.store(mixin_obj)
+        print("Stored")
 
 
 @cli.command()

@@ -53,6 +53,8 @@ class Customer(emerge.core.objects.EmergeFile):
     value: int = 0
     fields = persistent.list.PersistentList()
 
+    def getId(self):
+        return self.customerId
 
 _words = ["one", "two", "three", "four", "five"]
 

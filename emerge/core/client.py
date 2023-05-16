@@ -78,7 +78,11 @@ class Z0RPCClient:
     def store(self, obj):
         import inspect
 
-        _source = inspect.getsource(type(obj))
+        try:
+            _source = inspect.getsource(type(obj))
+        except:
+            _source = "No source available"
+
         self.client.store(obj.id, obj.path, obj.name, _source, dill.dumps(obj))
 
     def list(self, path, offset=0, size=0):
