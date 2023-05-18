@@ -18,6 +18,25 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def get_methods(file):
+    from inspect import signature
+
+    method_list = [
+        attribute
+        for attribute in dir(type(file))
+        if callable(getattr(type(file), attribute))
+        and attribute.startswith("_") is False
+    ]
+
+    methods = []
+    for method in method_list:
+        _method = getattr(file, method)
+        if _method.__qualname__.find(file.__class__.__name__) == 0:
+            methods += [(method, signature(_method))]
+
+    return methods
+
+
 def human_readable_size(size, decimal_places=2):
     for unit in ["B", "K", "M", "G", "T", "P"]:
         if size < 1024.0 or unit == "PiB":
@@ -103,7 +122,10 @@ def mixin(context, class1, class2, mixin, name, path):
     client = context.obj["client"]
 
     _object1 = client.getobject(class1, False)
+    _object1_methods = get_methods(_object1)
     _object2 = client.getobject(class2, False)
+    _object2_methods = get_methods(_object2)
+    print(_object2_methods)
 
     _class1 = _object1.__class__
     _class2 = _object2.__class__
@@ -122,7 +144,10 @@ def mixin(context, class1, class2, mixin, name, path):
     #source = f"""class {mixin}({_class1.__name__},{_class2.__name__}): pass"""
     #print(source)
     #exec(source)
-    _mixin = type(mixin, (_class1, _class2), object1_data)
+    class EmergeMixin: pass
+
+
+    _mixin = type(mixin, (_class1, _class2, EmergeMixin), object1_data)
     #module = importlib.import_module(_mixin.__module__)
     #setattr(module, name, _mixin)
     help(_mixin)
@@ -350,23 +375,27 @@ def cmd_help(context, path):
 @click.pass_context
 def methods(context, path):
     """Display available methods for an object"""
+    from types import FunctionType
     from inspect import signature
+
+    def listMethods(cls):
+        return set(x for x, y in cls.__dict__.items()
+                   if isinstance(y, (FunctionType, classmethod, staticmethod)) and x.startswith('_') is False and type(x) is str)
 
     client = context.obj["client"]
 
     file = client.getobject(path, False)
-    method_list = [
-        attribute
-        for attribute in dir(type(file))
-        if callable(getattr(type(file), attribute))
-        and attribute.startswith("_") is False
-    ]
-
-    for method in method_list:
-        _method = getattr(file, method)
-        if _method.__qualname__.find(file.__class__.__name__) == 0:
-            print(method, signature(_method))
-
+    if str(file.__class__.__bases__).find("EmergeMixin") > -1:
+        for _class in file.__class__.__bases__:
+            methods = listMethods(_class)
+            if len(list(methods)) > 0:
+                mname = list(methods)[0]
+                _method = getattr(_class, mname)
+                print(mname, str(signature(_method)).replace("self",""))
+    else:
+        methods = get_methods(file)
+        for method in methods:
+            print(method[0],method[1])
 
 @cli.command()
 @click.argument("path")
