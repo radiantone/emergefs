@@ -36,6 +36,13 @@ install: depends init
 	python3 setup.py clean; \
 	)
 
+
+.PHONY: notebook
+notebook: depends init
+	. venv/bin/activate && ( \
+	jupyter notebook ipynb/Farms.ipynb \
+	)
+
 .PHONY: update
 update: format lint
 	pip3 freeze | grep -v emerge > requirements.txt
