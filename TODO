@@ -3,7 +3,7 @@
     - if an error occurs at any step, all previous steps are rolled back automatically
 - RESTServer and RESTClients
 - Various FileSystem Implementations (SQL, S3, Dynamo, etc)
--
+- Research ways to avoid dilling objects to/farm Z0DB, since it only supports pickle and can't serialize some classes/objects
 
 
 -------------
