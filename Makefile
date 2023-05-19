@@ -58,7 +58,7 @@ daemon: build
 	docker compose up -d
 
 .PHONY: down
-down:
+stop:
 	docker compose stop
 
 .PHONY: docs

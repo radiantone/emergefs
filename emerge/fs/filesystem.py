@@ -9,18 +9,32 @@ import ZODB.FileStorage
 
 from emerge.core.objects import FileSystem
 
+FILESYSTEM_CLASS = "Z0DBFileSystem"
+
 
 class FileSystemFactory:
-
-    instance_class = "Z0DBFileSystem"
-
     @classmethod
-    def get(cls):
+    def get(cls, fsclass):
         current_module = sys.modules[__name__]
 
-        class_ = getattr(current_module, cls.instance_class)
+        if fsclass is None:
+            fsclass = FILESYSTEM_CLASS
+
+        class_ = getattr(current_module, fsclass)
 
         return class_()
+
+
+class SQLFileSystem(FileSystem):
+    pass
+
+
+class S3FileSystem(FileSystem):
+    pass
+
+
+class DynamoDBFileSystem(FileSystem):
+    pass
 
 
 class Z0DBFileSystem(FileSystem):

@@ -13,7 +13,8 @@ import zope
 from littletable import Table
 
 from emerge.compute import Data
-from emerge.core.client import Client, IClient
+from emerge.core.client import IClient
+from emerge.core.client import Z0RPCClient as Client
 from emerge.core.objects import EmergeFile, Server
 from emerge.fs.filesystem import FileSystemFactory
 
@@ -36,7 +37,7 @@ class QueryClass(graphene.ObjectType):
     pass
 
 
-class NodeServer(Server):
+class Z0DBNodeServer(Server):
     """Node server"""
 
     topic = "NODE"
@@ -50,6 +51,8 @@ class NodeServer(Server):
         name = "NodeAPI"
 
         def __init__(self):
+            # self.fs = FileSystemFactory.get("SQLFileSystem")
+            # self.fs = FileSystemFactory.get("S3FileSystem")
             self.fs = FileSystemFactory.get()
             self.fs.setup()
             self.fs.start()
@@ -1111,3 +1114,6 @@ class NodeServer(Server):
         [service.start() for service in self.services]
 
         return True
+
+
+NodeServer = Z0DBNodeServer

@@ -111,12 +111,11 @@ def start(context, port):
 @click.argument("class2", required=True, default=None)
 @click.argument("mixin", required=True, default=None)
 @click.argument("name", required=True, default=None)
-@click.option("-p","--path", required=False, default=None)
+@click.option("-p", "--path", required=False, default=None)
 @click.pass_context
 def mixin(context, class1, class2, mixin, name, path):
     """Mix in 2 classes into a new combined class or instance"""
     import json
-
     import uuid
 
     client = context.obj["client"]
@@ -125,42 +124,40 @@ def mixin(context, class1, class2, mixin, name, path):
     _object1_methods = get_methods(_object1)
     _object2 = client.getobject(class2, False)
     _object2_methods = get_methods(_object2)
-    print(_object2_methods)
 
     _class1 = _object1.__class__
     _class2 = _object2.__class__
-
 
     object1_data = json.loads(_object1.to_json())
     object2_data = json.loads(_object2.to_json())
     object1_data.update(object2_data)
 
-
     def constructor(self, *args, **kwargs):
         pass
 
     object1_data["__init__"] = constructor
-    #print(_class1,_class2)
-    #source = f"""class {mixin}({_class1.__name__},{_class2.__name__}): pass"""
-    #print(source)
-    #exec(source)
-    class EmergeMixin: pass
+    # print(_class1,_class2)
+    # source = f"""class {mixin}({_class1.__name__},{_class2.__name__}): pass"""
+    # print(source)
+    # exec(source)
 
+    class EmergeMixin:
+        pass
 
     _mixin = type(mixin, (_class1, _class2, EmergeMixin), object1_data)
-    #module = importlib.import_module(_mixin.__module__)
-    #setattr(module, name, _mixin)
+    # module = importlib.import_module(_mixin.__module__)
+    # setattr(module, name, _mixin)
     help(_mixin)
 
     mixin_obj = _mixin()
 
     mixin_obj.id = name
     mixin_obj.name = name
-    print(mixin_obj)
     if path:
         mixin_obj.path = path
 
         mixin_obj.uuid = str(uuid.uuid4())
+        print(mixin_obj)
         # Create instance of __mixin combining the data from object1 and object2
         # inspect.getsource(type(mixin_obj))
 
@@ -375,12 +372,17 @@ def cmd_help(context, path):
 @click.pass_context
 def methods(context, path):
     """Display available methods for an object"""
-    from types import FunctionType
     from inspect import signature
+    from types import FunctionType
 
     def listMethods(cls):
-        return set(x for x, y in cls.__dict__.items()
-                   if isinstance(y, (FunctionType, classmethod, staticmethod)) and x.startswith('_') is False and type(x) is str)
+        return set(
+            x
+            for x, y in cls.__dict__.items()
+            if isinstance(y, (FunctionType, classmethod, staticmethod))
+            and x.startswith("_") is False
+            and type(x) is str
+        )
 
     client = context.obj["client"]
 
@@ -391,11 +393,12 @@ def methods(context, path):
             if len(list(methods)) > 0:
                 mname = list(methods)[0]
                 _method = getattr(_class, mname)
-                print(mname, str(signature(_method)).replace("self",""))
+                print(mname, str(signature(_method)).replace("self", ""))
     else:
         methods = get_methods(file)
         for method in methods:
-            print(method[0],method[1])
+            print(method[0], method[1])
+
 
 @cli.command()
 @click.argument("path")

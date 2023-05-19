@@ -56,9 +56,10 @@ class Customer(emerge.core.objects.EmergeFile):
     def getId(self):
         return self.customerId
 
+
 _words = ["one", "two", "three", "four", "five"]
 
-for i in range(0, 100):
+for i in range(0, 20):
     customerId = str(uuid4())
     now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     words = []

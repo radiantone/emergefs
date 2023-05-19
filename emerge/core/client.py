@@ -144,6 +144,3 @@ class Z0RPCClient:
 
     def run(self, oid, method):
         return self.client.execute(oid, method)
-
-
-Client = Z0RPCClient
