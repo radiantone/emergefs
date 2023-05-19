@@ -1,3 +1,12 @@
+- Create/Store open transaction on server, for client to add various operations to, then commit as a whole
+    - e.g. open transaction by name, then call mathods or set properties on multiple objects, then commit
+    - if an error occurs at any step, all previous steps are rolled back automatically
+- RESTServer and RESTClients
+- Various FileSystem Implementations (SQL, S3, Dynamo, etc)
+-
+
+
+-------------
 - Add different RPC implementations e.g. HTTP (in addition to 0MQ/ZRPC) so it can run in a browser (clients)
 - Be able to combine objects into new mixed-in objects
     - For example:  $ emerge mixin /path/object1 /path/object2 /path/mixedobject

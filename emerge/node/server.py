@@ -978,7 +978,9 @@ class Z0DBNodeServer(Server):
 
         return True
 
-    def setup(self, options: dict = {}) -> bool:
+    def setup(self, options=None) -> bool:
+        if options is None:
+            options = {}
         import socket
         from contextlib import closing
 
