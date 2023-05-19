@@ -37,6 +37,20 @@ class QueryClass(graphene.ObjectType):
     pass
 
 
+class RESTNodeServer(Server):
+    def setup(self, options: dict) -> bool:
+        pass
+
+    def start(self) -> bool:
+        pass
+
+    def stop(self) -> bool:
+        pass
+
+    def shutdown(self) -> bool:
+        pass
+
+
 class Z0DBNodeServer(Server):
     """Node server"""
 
