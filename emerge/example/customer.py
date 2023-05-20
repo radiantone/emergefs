@@ -16,7 +16,7 @@ class Address(emerge.core.objects.EmergeFile):
 class Customer(emerge.core.objects.EmergeFile):
     """Class for keeping track of an item in inventory."""
 
-    address: Address = Address()
+    address: Address = Address(id="none")
     name: str = ""
 
 

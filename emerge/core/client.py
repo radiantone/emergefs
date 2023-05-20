@@ -142,5 +142,5 @@ class Z0RPCClient:
 
         return _files
 
-    def run(self, oid, method):
-        return self.client.execute(oid, method)
+    def run(self, oid, method, data=None):
+        return self.client.execute(oid, method, data)

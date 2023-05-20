@@ -194,3 +194,4 @@ ZODB==5.7.0
 zodbpickle==2.3
 zope.event==4.5.0
 zope.interface==5.4.0
+setuptools~=59.6.0

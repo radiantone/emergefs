@@ -364,7 +364,8 @@ def cmd_help(context, path):
     client = context.obj["client"]
 
     file = client.getobject(path, False)
-    help(file)
+    if file is not None:
+        help(file)
 
 
 @cli.command()
@@ -431,15 +432,29 @@ def code(context, path):
 @click.pass_context
 def call(context, path, function, local):
     """Call an object method"""
-    client = context.obj["client"]
+    import sys
+    import select
 
+    if select.select([sys.stdin, ], [], [], 0.0)[0]:
+        data = sys.stdin.read()
+    else:
+        data = None
+
+    client = context.obj["client"]
     try:
         if local:
             obj = client.getobject(path, False)
             method = getattr(obj, function)
-            print(method())
+            if data:
+                logging.debug("DATA: %s", data)
+                print(method(data))
+            else:
+                print(method())
         else:
             result = client.run(path, function)
             print(result)
     except Exception as ex:
-        logging.error(ex.msg)
+        if hasattr(ex, 'msg'):
+            logging.error(ex.msg)
+        else:
+            logging.error(ex)

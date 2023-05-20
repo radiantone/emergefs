@@ -42,4 +42,4 @@ sorts = counts.sort_values(by="value", ascending=False, inplace=False)
 print(sorts)
 print("---------------------------------")
 # Query the sorted dataframe with an expression
-print(sorts.query("value < 7 and count > 10"))
+print(sorts.query("value > 0 and count < 100"))
