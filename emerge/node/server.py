@@ -464,7 +464,7 @@ class Z0DBNodeServer(Server):
             finally:
                 connection.close()
 
-        def execute(self, oid, method, data=None):
+        def execute(self, oid, method):
             """Execute a method on an object"""
 
             import inspect

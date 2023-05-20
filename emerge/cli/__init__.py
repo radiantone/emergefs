@@ -360,7 +360,7 @@ def cmd_query(context, path):
 @click.argument("path")
 @click.pass_context
 def cmd_help(context, path):
-    """Display details of an objects class"""
+    """Display details of an object class"""
     client = context.obj["client"]
 
     file = client.getobject(path, False)
@@ -403,14 +403,25 @@ def methods(context, path):
 
 @cli.command()
 @click.argument("path")
+@click.option("-p", "--pretty", is_flag=True)
 @click.pass_context
-def cat(context, path):
+def cat(context, path, pretty):
     """Display contents of an object"""
 
     client = context.obj["client"]
 
     file = client.getobject(path, False)
-    print(file)
+
+    if not pretty:
+        print(file)
+    else:
+        import json
+
+        try:
+            data = json.loads(str(file))
+            print(json.dumps(data, indent=4))
+        except:
+            print(file)
 
 
 @cli.command()
@@ -432,10 +443,17 @@ def code(context, path):
 @click.pass_context
 def call(context, path, function, local):
     """Call an object method"""
-    import sys
     import select
+    import sys
 
-    if select.select([sys.stdin, ], [], [], 0.0)[0]:
+    if select.select(
+        [
+            sys.stdin,
+        ],
+        [],
+        [],
+        0.0,
+    )[0]:
         data = sys.stdin.read()
     else:
         data = None
@@ -454,7 +472,7 @@ def call(context, path, function, local):
             result = client.run(path, function)
             print(result)
     except Exception as ex:
-        if hasattr(ex, 'msg'):
+        if hasattr(ex, "msg"):
             logging.error(ex.msg)
         else:
             logging.error(ex)
