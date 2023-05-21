@@ -1,3 +1,7 @@
+- emerge cat /queries/query1.results
+    - Be able to cat subobjects and collections
+
+-------------
 - Create/Store open transaction on server, for client to add various operations to, then commit as a whole
     - e.g. open transaction by name, then call mathods or set properties on multiple objects, then commit
     - if an error occurs at any step, all previous steps are rolled back automatically

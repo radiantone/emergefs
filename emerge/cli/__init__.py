@@ -407,15 +407,21 @@ def methods(context, path):
 @click.pass_context
 def cat(context, path, pretty):
     """Display contents of an object"""
+    import json
 
     client = context.obj["client"]
 
-    file = client.getobject(path, False)
+    # TODO: Here, we want to keep resolving the sub references recursively
+    splits = path.rsplit('.')
+    file = client.getobject(splits[0], False)
+
+    if len(splits) > 1:
+        collection = getattr(file, splits[1])
+        file = [json.loads(str(item)) for item in collection]
 
     if not pretty:
         print(file)
     else:
-        import json
 
         try:
             data = json.loads(str(file))
