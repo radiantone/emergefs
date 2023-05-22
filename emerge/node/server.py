@@ -473,7 +473,6 @@ class Z0DBNodeServer(Server):
             import transaction
 
             tx_mgr = transaction.TransactionManager()
-            logging.info("EXECUTE: Got Data %s", data)
             connection = self.fs.db.open(tx_mgr)
 
             fsroot = connection.root()

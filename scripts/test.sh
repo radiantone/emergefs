@@ -51,3 +51,6 @@ emerge cat /queries/query1
 emerge cat /queries/query1.results
 # Be able to path into objects, subobjects, results of queries etc
 # emerge cat /queries/query1.results.name
+emerge add /customers/Customer-0 farms /farms/farmOne
+emerge cat /customers/Customer-0
+emerge cat /customers/Customer-0.farms
