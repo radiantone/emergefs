@@ -25,6 +25,7 @@ emerge -h localhost:5559 ls -l
 emerge -h localhost:5559 ls -l /inventory
 emerge -h localhost:5559 cat /inventory/widget2a
 
+python emerge/example/customers.py
 emerge mixin /customers/Customer-0 /inventory/widget9 MixinOne mixin2 --path /inventory
 emerge methods /inventory/mixin2
 
@@ -38,7 +39,6 @@ emerge rm /inventory/widget7
 emerge rm /inventory/widget8
 emerge rm /inventory/widget9
 
-python emerge/example/customers.py
 python emerge/example/aggregation.py
 python emerge/example/geodata.py
 emerge cat /farms/farmOne
