@@ -444,6 +444,31 @@ def code(context, path):
 
 @cli.command()
 @click.argument("path")
+@click.argument("field")
+@click.argument("object", nargs=-1)
+@click.pass_context
+def add(context, path, field, object):
+    """Add objects to another object"""
+    client = context.obj["client"]
+
+    try:
+        obj = client.getobject(path, False)
+        _field = getattr(obj, field)
+
+        for opath in object:
+            _o = client.getobject(opath, False)
+            logging.debug("Adding %s", opath)
+            _field.append(_o)
+
+        client.store(obj)
+    except Exception as ex:
+        if hasattr(ex, "msg"):
+            logging.error(ex.msg)
+        else:
+            logging.error(ex)
+
+@cli.command()
+@click.argument("path")
 @click.argument("function")
 @click.option("-l", "--local", is_flag=True)
 @click.pass_context

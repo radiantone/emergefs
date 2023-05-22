@@ -35,7 +35,7 @@ counts = groups.size().reset_index(name="count")
 print(counts)
 
 # Just get the group where value=5 and print it
-print(groups.get_group(5).to_json(orient="records"))
+print(groups.get_group(2).to_json(orient="records"))
 
 # Sort the group+count dataframe and print it
 sorts = counts.sort_values(by="value", ascending=False, inplace=False)

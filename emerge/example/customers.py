@@ -51,7 +51,7 @@ class Customer(emerge.core.objects.EmergeFile):
     createTimeStamp: str = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     customerId: str = ""
     value: int = 0
-    fields = persistent.list.PersistentList()
+    farms = persistent.list.PersistentList()
 
     def getId(self):
         return self.customerId

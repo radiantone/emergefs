@@ -14,7 +14,7 @@ FILESYSTEM_CLASS = "Z0DBFileSystem"
 
 class FileSystemFactory:
     @classmethod
-    def get(cls, fsclass):
+    def get(cls, fsclass=FILESYSTEM_CLASS):
         current_module = sys.modules[__name__]
 
         if fsclass is None:

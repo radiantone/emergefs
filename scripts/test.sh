@@ -46,3 +46,8 @@ emerge ls -l
 
 emerge cat /inventory/mixin2
 emerge methods /inventory/mixin2
+
+emerge cat /queries/query1
+emerge cat /queries/query1.results
+# Be able to path into objects, subobjects, results of queries etc
+# emerge cat /queries/query1.results.name

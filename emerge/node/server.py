@@ -92,6 +92,7 @@ class Z0DBNodeServer(Server):
                 self.schemas[_obj.__class__.__name__] = self.schema
 
                 try:
+                    logging.info("INSERT %s %s", oid, _obj)
                     self.objects.insert(_obj)
                 except KeyError:
                     self.objects.delete(id=oid)
@@ -770,7 +771,7 @@ class Z0DBNodeServer(Server):
                     fsroot = connection.root()
 
                     # Make graphql schema for object
-                    logging.info("_OBJ %s %s", type(_obj), obj)
+                    logging.info("1_OBJ %s %s", type(_obj), obj)
                     _fields, self.schema = self._make_graphql(_obj)
 
                     # Store the updated schema
@@ -778,7 +779,7 @@ class Z0DBNodeServer(Server):
                     self.schemas[_obj.__class__.__name__] = self.schema
 
                     # Store the objects class in the classes registry
-                    logging.info("_OBJ %s %s", _obj.__class__, _obj)
+                    logging.info("2_OBJ %s %s", _obj.__class__, _obj)
                     # transaction.begin()
                     fsroot.classes[_obj.__class__.__name__] = dill.dumps(_obj.__class__)
                     # transaction.commit()
@@ -845,7 +846,7 @@ class Z0DBNodeServer(Server):
                     if path[-1] != "/" and len(name) > 0:
                         fsroot.registry[path + "/" + name] = file
                         logging.info(
-                            "Adding to registry %s %s", path + "/" + name, file
+                            "Adding to registry2 %s %s", path + "/" + name, file
                         )
 
                         if not IS_BROKER:
@@ -877,7 +878,7 @@ class Z0DBNodeServer(Server):
                             )
                     else:
                         fsroot.registry[path + name] = file
-                        logging.info("Adding to registry %s %s", path + name, file)
+                        logging.info("Adding to registry3 %s %s", path + name, file)
 
                         if not IS_BROKER:
                             broker = Client(BROKER, "5558")
@@ -907,13 +908,14 @@ class Z0DBNodeServer(Server):
                                 }
                             )
 
-                    logging.info("_OBJ str %s", str(_obj))
+                    logging.info("3_OBJ str %s %s", _uuid, str(_obj))
 
                     # Insert object in the searchable index
                     try:
                         self.objects.insert(_obj)
                     except KeyError:
-                        self.objects.delete(id=_uuid)
+                        logging.error("KeyError")
+                        self.objects.delete(uuid=_uuid)
                         self.objects.insert(_obj)
                     except Exception as ex:
                         # TODO: Objects with subobjects trigger this

@@ -37,7 +37,6 @@ defusedxml==0.7.1
 Deprecated==1.2.13
 dill==0.3.6
 docutils==0.17.1
-emergefs==0.0.5
 executing==1.2.0
 fastjsonschema==2.16.3
 Fiona==1.9.1
