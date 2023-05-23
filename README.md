@@ -241,6 +241,125 @@ $ emerge cat /inventory/widget1
 
 ```
 
+### Accessing properties of an object
+You can retrieve any property of an object and display it from the `emerge` CLI.
+
+```bash
+$ emerge cat /inventory/widget2a -p
+{
+    "id": "widget2a",
+    "data": "A widget2a data with FOO",
+    "date": "May 23 2023 15:38:48",
+    "name": "widget2a",
+    "path": "/inventory",
+    "perms": "rwxrwxrwx",
+    "type": "file",
+    "uuid": "e7538893-2b8c-4d35-88ca-4334b829d4e1",
+    "node": "broker",
+    "version": 0,
+    "unit_price": 3.0,
+    "quantity_on_hand": 10,
+    "totalcost": 30.0,
+    "foo": "FOO"
+}
+$ emerge cat /inventory/widget2a.data
+A widget2a data with FOO
+$ emerge cat /inventory/widget2a.unit_price
+3.0
+$ emerge cat /customers/Customer-0.farms -p
+[
+    {
+        "id": "farmOne",
+        "data": "",
+        "date": "May 23 2023 15:38:54",
+        "name": "farmOne",
+        "path": "/farms",
+        "perms": "rwxrwxrwx",
+        "type": "file",
+        "uuid": "4f85382d-3b85-487b-93ff-94bb8c4ab078",
+        "node": "broker",
+        "version": 0,
+        "_shape": {
+            "type": "FeatureCollection",
+            "name": "DarrenFarm",
+            "crs": {
+                "type": "name",
+                "properties": {
+                    "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+                }
+            },
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "MultiPolygon",
+                        "coordinates": [
+                            [
+                                [
+                                    [
+                                        -78.140978,
+                                        38.439666
+                                    ],
+                                    [
+                                        -78.140684,
+                                        38.43893
+                                    ],
+                                    [
+                                        -78.140831,
+                                        38.438939
+                                    ],
+                                    [
+                                        -78.14208,
+                                        38.439019
+                                    ],
+                                    [
+                                        -78.142933,
+                                        38.439467
+                                    ],
+                                    [
+                                        -78.14347,
+                                        38.439749
+                                    ],
+                                    [
+                                        -78.142684,
+                                        38.440555
+                                    ],
+                                    [
+                                        -78.14194,
+                                        38.43946
+                                    ],
+                                    [
+                                        -78.141228,
+                                        38.439604
+                                    ],
+                                    [
+                                        -78.140978,
+                                        38.439666
+                                    ]
+                                ]
+                            ]
+                        ]
+                    },
+                    "properties": {
+                        "OBJECTID": 3175565,
+                        "VGIN_QPID": 5111300009436,
+                        "FIPS": "51113",
+                        "LOCALITY": "Madison County",
+                        "PARCELID": "33        10L3310L",
+                        "PTM_ID": "33        10L3310L",
+                        "LASTUPDATE": "2022-03-07",
+                        "Shapearea": 28188.864966685,
+                        "Shapelen": 883.1957360885991
+                    }
+                }
+            ]
+        },
+        "crs": "EPSG:4326"
+    }
+]
+$
+```
+
 ### Querying the Filesystem
 
 

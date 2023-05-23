@@ -413,6 +413,8 @@ def cat(context, path, pretty):
     """Display contents of an object"""
     import json
 
+    import persistent.list
+
     client = context.obj["client"]
 
     # TODO: Here, we want to keep resolving the sub references recursively
@@ -421,7 +423,9 @@ def cat(context, path, pretty):
     file = client.getobject(splits[0], False)
     if len(splits) > 1:
         collection = getattr(file, splits[1])
-        if isinstance(collection, list):
+        if isinstance(collection, list) or isinstance(
+            collection, persistent.list.PersistentList
+        ):
             file = [json.loads(str(item)) for item in collection]
         else:
             file = str(collection)
