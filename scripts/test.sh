@@ -54,4 +54,4 @@ emerge cat /queries/query1.results
 # emerge cat /queries/query1.results.name
 emerge add /customers/Customer-0 farms /farms/farmOne
 emerge cat /customers/Customer-0
-emerge cat /customers/Customer-0.farms
+emerge cat /customers/Customer-0.farms -p

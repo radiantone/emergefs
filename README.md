@@ -337,6 +337,67 @@ for result in query.results:
     print(result)
     print(round(result.total_cost(), 1))
 ```
+### Mixins
+Using `emerge` you can mix together (mixins) two different object/classes into a new object that has the properties and methods of both the mixed-in objects.
+
+Let's say we have the following two objects: A Customer (of class `Customer`) object and a Widget object. Each with different properties and methods
+```bash
+$ emerge cat /customers/Customer-0 
+{'id': 'Customer-0', 'data': 'A customer 0 data', 'date': 'May 23 2023 08:47:22', 'name': 'Customer-0', 'path': '/customers', 'perms': 'rwxrwxrwx', 'type': 'file', 'uuid': '94a6938f-1aa6-4aac-9bfc-ff294fe6a0fb', 'node': 'broker', 'version': 0, 'words': ['one', 'one'], 'createdOn': '05/23/2023 08:47:22', 'createTimeStamp': '05/23/2023 08:47:22', 'customerId': '9e40bbed-cf90-43ac-a5ef-bd71e4512ad2', 'value': 4}
+$ emerge methods /customers/Customer-0
+getId ()
+$ emerge call /customers/Customer-0 getId
+9e40bbed-cf90-43ac-a5ef-bd71e4512ad2
+```
+and a widget (of class `InventoryItem`)
+```bash
+$ emerge cat /inventory/widget9
+{'id': 'widget9', 'data': 'A widget9 data', 'date': 'May 23 2023 08:47:15', 'name': 'widget9', 'path': '/inventory', 'perms': 'rwxrwxrwx', 'type': 'file', 'uuid': 'bb6bca7a-50fe-42fb-977e-7cce26477eb9', 'node': 'broker', 'version': 0, 'unit_price': 2.6048927180813135, 'quantity_on_hand': 43, 'totalcost': 112.01038687749649}
+$ emerge methods /inventory/widget9
+total_cost () -> float
+$ emerge call /inventory/widget9 total_cost
+112.01038687749649
+```
+We mix these two objects together using the `mixin` command
+
+```bash
+$ emerge mixin --help
+Usage: emerge mixin [OPTIONS] CLASS1 CLASS2 MIXIN NAME
+
+  Mix in 2 classes into a new combined class or instance
+
+Options:
+  -p, --path TEXT
+  --help           Show this message and exit.
+
+$ emerge mixin /customers/Customer-0 /inventory/widget9 MixinOne mixin2 --path /inventory
+Help on class MixinOne in module emerge.cli:
+
+class MixinOne(__main__.Customer, __main__.InventoryItem, EmergeMixin)
+ |  MixinOne(*args, **kwargs)
+ |  
+ |  Method resolution order:
+ |      MixinOne
+ |      __main__.Customer
+ |      __main__.InventoryItem
+ |      EmergeMixin
+ |      emerge.core.objects.EmergeFile
+ |      emerge.core.objects.EmergeObject
+ |      emerge.data.EmergeData
+ |      persistent.Persistent
+ |      builtins.object
+ |  
+...
+```
+We can see above, our new class MixinOne inherits from both `Customer` and `InventoryItem` and our new instance `mixin2` is stored in `/inventory`
+```bash
+$ emerge methods /inventory/mixin2
+getId ()
+total_cost () -> float
+$ emerge cat /inventory/mixin2
+{'createTimeStamp': '05/23/2023 08:55:10', 'createdOn': '05/23/2023 08:55:10', 'customerId': '77c1a87c-e635-4a0e-963d-7b7f5927c155', 'data': 'A widget9 data', 'date': 'May 23 2023 08:55:14', 'farms': [], 'id': 'mixin2', 'name': 'mixin2', 'node': 'broker', 'path': '/inventory', 'perms': 'rwxrwxrwx', 'quantity_on_hand': 8, 'totalcost': 0.0, 'type': 'file', 'unit_price': 67.21145746230917, 'uuid': 'f1740e64-59e3-494d-a30b-5997f93737a4', 'value': 2, 'version': 0, 'words': ['one', 'four']}
+```
+We can see in the newly mixed object `mixin2` that it has properties from `widget9` (such as unit_price, totalcost etc) and properties from `Customer-0` such as customerId.
 
 ### GraphQL queries
 `emerge` will automatically create the required GraphQL schemas and resolvers for your objects!
