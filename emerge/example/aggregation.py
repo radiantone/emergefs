@@ -27,9 +27,14 @@ agg = AggregationFile(
     id="agg1", name="agg1", path="/aggregations", data="A query object"
 )
 
+# Put the new object on the server
 fs.store(agg)
 
+# Query my new object from the server (as a service)
+# Perform dataframe aggregations on the server
+# Return the results locally here as a dataframe
 groups = fs.query("/aggregations/agg1")
+
 # Compute size of each group and add it to count col
 counts = groups.size().reset_index(name="count")
 print(counts)
