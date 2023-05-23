@@ -186,7 +186,7 @@ def search(context, field, query):
 @click.argument("query", required=False, default=None)
 @click.pass_context
 def graphql(context, query):
-    """Query using graphql"""
+    """Query using graphql (experimental)"""
     client = context.obj["client"]
 
     print(client.graphql(query))
