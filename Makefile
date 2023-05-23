@@ -87,7 +87,7 @@ test: format lint
 .PHONY: run
 run: test daemon
 	./scripts/test.sh
-	make down
+	make stop
 	
 .PHONY: all
 all: format lint update docs install test clean run

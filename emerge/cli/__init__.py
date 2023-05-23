@@ -5,6 +5,7 @@ import sys
 
 import click
 from zerorpc.exceptions import RemoteError
+
 from emerge.core.objects import EmergeFile
 
 logging.basicConfig(
@@ -132,10 +133,11 @@ def mixin(context, class1, class2, mixin, name, path):
     object1_data = json.loads(_object1.to_json())
     object2_data = json.loads(_object2.to_json())
     object1_data.update(object2_data)
-    #print("object1_data", object1_data)
+    # print("object1_data", object1_data)
 
     def constructor(self, *args, **kwargs):
         pass
+
     def __str__(self):
         return self.to_json()
 
@@ -150,12 +152,12 @@ def mixin(context, class1, class2, mixin, name, path):
     # setattr(module, name, _mixin)
     help(_mixin)
 
-    del object1_data['__init__']
-    object1_data['id'] = name
-    object1_data['name'] = name
-    object1_data['path'] = path
-    object1_data['uuid'] = str(uuid.uuid4())
-    mixin_obj = _mixin(object1_data['id'])
+    del object1_data["__init__"]
+    object1_data["id"] = name
+    object1_data["name"] = name
+    object1_data["path"] = path
+    object1_data["uuid"] = str(uuid.uuid4())
+    mixin_obj = _mixin(object1_data["id"])
 
     for key in object1_data:
         setattr(mixin_obj, key, object1_data[key])
@@ -419,7 +421,10 @@ def cat(context, path, pretty):
     file = client.getobject(splits[0], False)
     if len(splits) > 1:
         collection = getattr(file, splits[1])
-        file = [json.loads(str(item)) for item in collection]
+        if isinstance(collection, list):
+            file = [json.loads(str(item)) for item in collection]
+        else:
+            file = str(collection)
     else:
         file = json.loads(str(file))
 
