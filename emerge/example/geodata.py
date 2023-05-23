@@ -38,6 +38,7 @@ class Farm(emerge.core.objects.EmergeFile):
     def centroid_to_str(self):
         return str(self.centroid())
 
+
 # Load a farm shape
 with open("data/shape/parcel1.geojson", "r") as file:
     farm1 = Farm(id="farmOne", name="farmOne", path="/farms")
