@@ -43,22 +43,32 @@ With emerge, you simply:
 $ emerge
 Usage: emerge [OPTIONS] COMMAND [ARGS]...
 
+  cli base command harness
+
 Options:
-  --debug  Debug switch
-  --help   Show this message and exit.
+  --debug          Debug switch
+  -h, --host TEXT  hostname:port for node
+  --help           Show this message and exit.
 
 Commands:
+  add      Add objects to another object
   call     Call an object method
   cat      Display contents of an object
   code     List source code of an object
   cp       Copy object command
-  help     Display details of an objects class
+  graphql  Query using graphql
+  help     Display details of an object class
+  index    Create or update a search index
+  init     Initialize or update the emerge.ini file
   ls       List files in a directory
   methods  Display available methods for an object
-  mkdir    Make directory command
+  mixin    Mix in 2 classes into a new combined class or instance
+  mkdir    Make a directory
   node     Emerge node commands
   query    Execute query method of an object
-  rm       Remove object command
+  rm       Remove an object or directory
+  search   Search for objects by their field data
+  update   Update objects in the database
 ```
 ## Examples
 
