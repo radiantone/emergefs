@@ -539,6 +539,8 @@ class Z0DBNodeServer(Server):
 
         def search(self, where):
             """Search for objects using an expression"""
+            import json
+
             lamd = dill.loads(where)
             logging.info("SEARCH LAMBDA: %s", lamd)
             results = self.objects.where(lamd)
@@ -546,7 +548,10 @@ class Z0DBNodeServer(Server):
             _results = []
 
             for result in results:
-                _results += [str(result)]
+                try:
+                    _results += [json.loads(str(result))]
+                except:
+                    _results += [str(result)]
 
             logging.info("SEARCH %s", _results)
             return _results
