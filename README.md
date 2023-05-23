@@ -523,12 +523,35 @@ We can see above, our new class MixinOne inherits from both `Customer` and `Inve
 $ emerge methods /inventory/mixin2
 getId ()
 total_cost () -> float
-$ emerge cat /inventory/mixin2
-{'createTimeStamp': '05/23/2023 08:55:10', 'createdOn': '05/23/2023 08:55:10', 'customerId': '77c1a87c-e635-4a0e-963d-7b7f5927c155', 'data': 'A widget9 data', 'date': 'May 23 2023 08:55:14', 'farms': [], 'id': 'mixin2', 'name': 'mixin2', 'node': 'broker', 'path': '/inventory', 'perms': 'rwxrwxrwx', 'quantity_on_hand': 8, 'totalcost': 0.0, 'type': 'file', 'unit_price': 67.21145746230917, 'uuid': 'f1740e64-59e3-494d-a30b-5997f93737a4', 'value': 2, 'version': 0, 'words': ['one', 'four']}
+$ emerge cat /inventory/mixin2 -p
+{
+    "createTimeStamp": "05/23/2023 15:55:36",
+    "createdOn": "05/23/2023 15:55:36",
+    "customerId": "298541aa-2b68-4844-995e-39b949f833bc",
+    "data": "A widget9 data",
+    "date": "May 23 2023 15:55:30",
+    "farms": [],
+    "id": "mixin2",
+    "name": "mixin2",
+    "node": "broker",
+    "path": "/inventory",
+    "perms": "rwxrwxrwx",
+    "quantity_on_hand": 43,
+    "totalcost": 97.73597773335872,
+    "type": "file",
+    "unit_price": 2.2729297147292726,
+    "uuid": "88ef7e5a-c1b6-4dac-8e4c-d50316a03cd7",
+    "value": 9,
+    "version": 0,
+    "words": [
+        "one",
+        "five"
+    ]
+}
 ```
 We can see in the newly mixed object `mixin2` that it has properties from `widget9` (such as unit_price, totalcost etc) and properties from `Customer-0` such as customerId.
 
-### GraphQL queries
+### GraphQL queries (experimental)
 `emerge` will automatically create the required GraphQL schemas and resolvers for your objects!
 
 Given the following class you create an object and insert into the filesystem.
