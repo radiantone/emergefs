@@ -52,7 +52,7 @@ def human_readable_size(size, decimal_places=2):
 @click.option("-h", "--host", default=None, help="hostname:port for node")
 @click.pass_context
 def cli(context, debug, host):
-    """cli base command harness"""
+    """emergefs CLI commands and utilities"""
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
 
