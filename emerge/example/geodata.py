@@ -25,6 +25,8 @@ class Farm(emerge.core.objects.EmergeFile):
 
     @property
     def geo(self):
+        import geopandas as gp
+
         gdf = gp.GeoDataFrame.from_features(self._shape["features"])
         gdf.crs = self.crs
         return gdf
@@ -33,10 +35,12 @@ class Farm(emerge.core.objects.EmergeFile):
         farm_gd = self.geo
         return farm_gd.to_crs(3857).centroid
 
+    def centroid_to_str(self):
+        return str(self.centroid())
 
 # Load a farm shape
 with open("data/shape/parcel1.geojson", "r") as file:
-    farm1 = Farm(id="farm1", name="farmOne", path="/farms")
+    farm1 = Farm(id="farmOne", name="farmOne", path="/farms")
     farm1.shape = geojson.loads(file.read())
     fs.store(farm1)
 
@@ -46,7 +50,7 @@ print("CENTROID", farm.centroid())
 
 # Load adjacent farm parcel
 with open("data/shape/parcel2.geojson", "r") as file:
-    farm2 = Farm(id="farm2", name="farmTwo", path="/farms")
+    farm2 = Farm(id="farmTwo", name="farmTwo", path="/farms")
     farm2.shape = geojson.loads(file.read())
     fs.store(farm2)
 

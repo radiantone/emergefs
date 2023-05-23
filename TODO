@@ -1,3 +1,15 @@
+- API to emerge provides same behavior as CLI
+    - Get/Run methods on objects, collections
+    - List directories
+    - Cat objects/subobjects
+    - Mix objects together
+    - Create/Update/Delete objects
+    - Create directories
+    - Copy objects from one path to another
+    - Run methods/aggregations on directories
+
+-------------
+
 - emerge cat /queries/query1.results
     - Be able to cat subobjects and collections
 
