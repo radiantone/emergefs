@@ -5,6 +5,7 @@ import sys
 
 import click
 from zerorpc.exceptions import RemoteError
+from emerge.core.objects import EmergeFile
 
 logging.basicConfig(
     level=logging.INFO,
@@ -131,17 +132,17 @@ def mixin(context, class1, class2, mixin, name, path):
     object1_data = json.loads(_object1.to_json())
     object2_data = json.loads(_object2.to_json())
     object1_data.update(object2_data)
+    #print("object1_data", object1_data)
 
     def constructor(self, *args, **kwargs):
         pass
+    def __str__(self):
+        return self.to_json()
 
     object1_data["__init__"] = constructor
-    # print(_class1,_class2)
-    # source = f"""class {mixin}({_class1.__name__},{_class2.__name__}): pass"""
-    # print(source)
-    # exec(source)
+    object1_data["__str__"] = __str__
 
-    class EmergeMixin:
+    class EmergeMixin(EmergeFile):
         pass
 
     _mixin = type(mixin, (_class1, _class2, EmergeMixin), object1_data)
@@ -149,18 +150,19 @@ def mixin(context, class1, class2, mixin, name, path):
     # setattr(module, name, _mixin)
     help(_mixin)
 
-    mixin_obj = _mixin()
+    del object1_data['__init__']
+    object1_data['id'] = name
+    object1_data['name'] = name
+    object1_data['path'] = path
+    object1_data['uuid'] = str(uuid.uuid4())
+    mixin_obj = _mixin(object1_data['id'])
 
-    mixin_obj.id = name
-    mixin_obj.name = name
+    for key in object1_data:
+        setattr(mixin_obj, key, object1_data[key])
+
     if path:
-        mixin_obj.path = path
-
-        mixin_obj.uuid = str(uuid.uuid4())
-        print(mixin_obj)
         # Create instance of __mixin combining the data from object1 and object2
         # inspect.getsource(type(mixin_obj))
-
         client.store(mixin_obj)
         print("Stored")
 
@@ -412,20 +414,20 @@ def cat(context, path, pretty):
     client = context.obj["client"]
 
     # TODO: Here, we want to keep resolving the sub references recursively
-    splits = path.rsplit('.')
-    file = client.getobject(splits[0], False)
+    splits = path.rsplit(".")
 
+    file = client.getobject(splits[0], False)
     if len(splits) > 1:
         collection = getattr(file, splits[1])
         file = [json.loads(str(item)) for item in collection]
+    else:
+        file = json.loads(str(file))
 
     if not pretty:
         print(file)
     else:
-
         try:
-            data = json.loads(str(file))
-            print(json.dumps(data, indent=4))
+            print(json.dumps(file, indent=4))
         except:
             print(file)
 
@@ -453,10 +455,17 @@ def add(context, path, field, object):
 
     try:
         obj = client.getobject(path, False)
+        if obj is None:
+            print(f"No object at path {path}")
+            return
         _field = getattr(obj, field)
 
         for opath in object:
             _o = client.getobject(opath, False)
+            if _o is None:
+                print(f"No object at path {opath}")
+                return
+
             logging.debug("Adding %s", opath)
             _field.append(_o)
 
@@ -466,6 +475,7 @@ def add(context, path, field, object):
             logging.error(ex.msg)
         else:
             logging.error(ex)
+
 
 @cli.command()
 @click.argument("path")

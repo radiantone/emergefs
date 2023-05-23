@@ -27,6 +27,7 @@ emerge -h localhost:5559 cat /inventory/widget2a
 
 python emerge/example/customers.py
 emerge mixin /customers/Customer-0 /inventory/widget9 MixinOne mixin2 --path /inventory
+emerge help /inventory/mixin2
 emerge methods /inventory/mixin2
 
 emerge rm /inventory/widget1
