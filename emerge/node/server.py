@@ -526,14 +526,22 @@ class Z0DBNodeServer(Server):
 
         def searchtext(self, field, query):
             """Search for objects using free text"""
+            import json
 
             base = getattr(self.objects.search, field)
             results = base(query)
-            logging.info("ST RESULTS %s", results)
+            logging.debug("ST RESULTS %s", results)
             _results = []
 
             for result in results:
-                _results += [str(result)]
+                try:
+                    logging.info("JSON TRY %s",result)
+                    _results += [json.loads(str(result[0]))]
+                except Exception as ex:
+                    logging.error(ex)
+                    _results += [str(result)]
+                    logging.info("STRING LOADED")
+
             logging.info("SEARCHTEXT %s", _results)
             return _results
 
