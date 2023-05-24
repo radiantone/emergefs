@@ -15,7 +15,7 @@ class QueryFile(emerge.core.objects.EmergeFile):
             if obj.unit_price < 20:
                 self.results.append(obj)
 
-        return str(self.results)
+        return self.results
 
 
 query = QueryFile(id="query1", name="query1", path="/queries", data="A query object")

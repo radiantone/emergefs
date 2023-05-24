@@ -168,10 +168,12 @@ class Z0DBNodeServer(Server):
                     r = obj.query(self)
                     fsroot.uuids[obj.uuid] = dill.dumps(obj)
 
+                logging.info("QUERY R %s %s", type(r), r)
                 return dill.dumps(r)
 
         def getobject(self, path, nodill, page=0, size=-1):
             """Retrieve an object from the database"""
+            import json
 
             connection = self.fs.db.open()
 
@@ -210,7 +212,10 @@ class Z0DBNodeServer(Server):
                     return the_obj
 
                 elif obj["type"] == "directory":
-                    return [dill.dumps(fsroot.uuids[o["uuid"]]) for o in obj["dir"]]
+                    if nodill:
+                        return json.dumps([o for o in obj["dir"]])
+                    else:
+                        return dill.dumps(json.dumps([o for o in obj["dir"]]))
 
             except KeyError as ex:
                 logging.error(ex)

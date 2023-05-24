@@ -244,10 +244,19 @@ def mkdir(context, directory):
 
 
 @cli.command()
+@click.argument("origin", default=None)
+@click.argument("destination", default=None)
 @click.pass_context
-def cp(context):
+def cp(context, origin, destination):
     """Copy object command"""
-    pass
+    client = context.obj["client"]
+
+    _origin = client.getobject(origin, dill=False)
+    _dest = client.getobject(destination, dill=False)
+
+    if _origin.type == 'file':
+        if _dest == 'directory':
+            print(f"Copying {origin} to {destination}")
 
 
 @cli.command()
@@ -352,12 +361,14 @@ def ls(context, long, directory):
 @cli.command(name="query")
 @click.argument("path")
 @click.pass_context
-def cmd_query(context, path):
+def query(context, path):
     """Execute query method of an object"""
+    import json
+
     client = context.obj["client"]
 
     results = client.query(path)
-    print(results)
+    print([json.loads(result.to_json()) for result in results])
 
 
 @cli.command(name="help")
@@ -421,14 +432,31 @@ def cat(context, path, pretty):
     splits = path.rsplit(".")
 
     file = client.getobject(splits[0], False)
-    if len(splits) > 1:
-        collection = getattr(file, splits[1])
-        if isinstance(collection, list) or isinstance(
-            collection, persistent.list.PersistentList
+    if file is None:
+        print("Object not found", splits[0])
+        return
+
+
+    def findfields(obj, field):
+        if isinstance(obj, list) or isinstance(
+                obj, persistent.list.PersistentList
         ):
-            file = [json.loads(str(item)) for item in collection]
+            return [o[field] for o in obj]
         else:
-            file = str(collection)
+            return getattr(obj, field)
+
+
+    if len(splits) > 1:
+        for r in range(1, len(splits)):
+            fields = findfields(file, splits[r])
+            try:
+                file = [json.loads(str(item)) for item in fields]
+            except Exception as ex:
+                logging.error(ex)
+                file = [str(item) for item in fields]
+
+        #fields = findfields(file, splits[1])
+        #file = [json.loads(str(item)) for item in fields]
     else:
         file = json.loads(str(file))
 
