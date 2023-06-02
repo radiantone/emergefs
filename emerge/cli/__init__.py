@@ -254,8 +254,8 @@ def cp(context, origin, destination):
     _origin = client.getobject(origin, dill=False)
     _dest = client.getobject(destination, dill=False)
 
-    if _origin.type == 'file':
-        if _dest == 'directory':
+    if _origin.type == "file":
+        if _dest == "directory":
             print(f"Copying {origin} to {destination}")
 
 
@@ -436,15 +436,11 @@ def cat(context, path, pretty):
         print("Object not found", splits[0])
         return
 
-
     def findfields(obj, field):
-        if isinstance(obj, list) or isinstance(
-                obj, persistent.list.PersistentList
-        ):
+        if isinstance(obj, list) or isinstance(obj, persistent.list.PersistentList):
             return [o[field] for o in obj]
         else:
             return getattr(obj, field)
-
 
     if len(splits) > 1:
         for r in range(1, len(splits)):
@@ -455,8 +451,8 @@ def cat(context, path, pretty):
                 logging.error(ex)
                 file = [str(item) for item in fields]
 
-        #fields = findfields(file, splits[1])
-        #file = [json.loads(str(item)) for item in fields]
+        # fields = findfields(file, splits[1])
+        # file = [json.loads(str(item)) for item in fields]
     else:
         file = json.loads(str(file))
 

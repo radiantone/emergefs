@@ -540,7 +540,7 @@ class Z0DBNodeServer(Server):
 
             for result in results:
                 try:
-                    logging.info("JSON TRY %s",result)
+                    logging.info("JSON TRY %s", result)
                     _results += [json.loads(str(result[0]))]
                 except Exception as ex:
                     logging.error(ex)

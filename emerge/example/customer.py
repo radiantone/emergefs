@@ -28,6 +28,9 @@ customer = Customer(
 )
 
 print(str(customer.address))
+with open("dump.dill", "wb") as d:
+    d.write(dill.dumps(customer))
+
 print(dill.loads(dill.dumps(customer)))
 fs.store(customer)
 print(customer)

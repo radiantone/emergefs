@@ -22,9 +22,47 @@ class IClient(zope.interface.Interface):
     def searchtext(self, field, query):
         raise NotImplementedError()
 
+    def store(self, obj):
+        raise NotImplementedError()
+
+    def list(self, path, offset=0, size=0):
+        raise NotImplementedError()
+
+    def getobject(self, path, nodill, offset=0, size=0):
+        raise NotImplementedError()
+
+    def hello(self, query):
+        raise NotImplementedError()
+
+    def graphql(self, query):
+        raise NotImplementedError()
+
+    def mkdir(self, directory):
+        raise NotImplementedError()
+
+    def rm(self, path):
+        raise NotImplementedError()
+
+    def query(self, path):
+        raise NotImplementedError()
+
+    def register(self, entry):
+        raise NotImplementedError()
+
+    def get(self, oid, offset=0, size=0):
+        raise NotImplementedError()
+
+    def run(self, oid, method, data=None):
+        raise NotImplementedError()
+
 
 @zope.interface.implementer(IClient)
 class RESTClient:
+    pass
+
+
+@zope.interface.implementer(IClient)
+class AppSyncDynamoDBClient:
     pass
 
 

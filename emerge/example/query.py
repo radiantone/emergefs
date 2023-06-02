@@ -1,3 +1,5 @@
+import json
+
 import emerge.core.objects
 from emerge import fs
 
@@ -23,4 +25,4 @@ query = QueryFile(id="query1", name="query1", path="/queries", data="A query obj
 fs.store(query)
 
 results = fs.query("/queries/query1")
-print(results)
+print([json.loads(result.to_json()) for result in results])
