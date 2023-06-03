@@ -1,4 +1,5 @@
 .scratch
+ipynb/.ipynb_checkpoints/
 ipynb/.ipynb_checkpoint/*
 ipynb/.ipynb_checkpoint
 ipynb/.ipynb_checkpoints/Farms-checkpoint.ipynb
